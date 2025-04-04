@@ -1,9 +1,28 @@
 #ifndef RHICfAnAnalysis_hh
 #define RHICfAnAnalysis_hh
 
-#include "TString.h"
+#include "TMath.h"
 
-class RHICfAnAnalysis
+#include "RHICfOptContainer.hh"
+#include "RHICfEventDstReader.hh"
+#include "RHICfTableMaker.hh"
+#include "RHICfParticleMaker.hh"
+
+#include "RHICfFigureDrawing.hh"
+#include "RHICfDLECondition.hh"
+#include "RHICfMassFitting.hh"
+#include "RHICfBinning.hh"
+#include "RHICfDilutionFactor.hh"
+#include "RHICfAsymmetry.hh"
+
+#include "StRHICfEventDst.h"
+#include "StRHICfEvent.h"
+#include "StRHICfTPCTrack.h"
+#include "StRHICfBTof.h"
+#include "StRHICfBBC.h"
+#include "StRHICfRPS.h"
+
+class RHICfAnAnalysis : public RHICfOptContainer, RHICfTableMaker
 {
     public:
         RHICfAnAnalysis();
@@ -11,12 +30,32 @@ class RHICfAnAnalysis
 
         int Init();
         int Calculate();
-        int SaveData();
-
-        // 
-        // void Ontest();
+        int Finish();
 
     private:
+        int MassCalculation();
+        int BinningCalculation();
+        int AnCalculation();
+
+        // Utilized classes
+        RHICfEventDstReader* mEventReader;
+        RHICfParticleMaker* mParticleMaker;
+
+        // Calculation classes
+        RHICfFigureDrawing* mFigureDrawing;
+        RHICfDLECondition* mDLECondition;
+        RHICfMassFitting* mMassFitting;
+        RHICfBinning* mBinning;
+        RHICfDilutionFactor* mDilution;
+        RHICfAsymmetry* mAsymmetry;
+
+        // StRHICfEventDst 
+        StRHICfEventDst* mEventDst;
+        StRHICfEvent* mEvent;
+        StRHICfBTof* mBTof;
+        StRHICfBBC* mBBC;
+        StRHICfRPS* mRPS;
+
 
 };
 
