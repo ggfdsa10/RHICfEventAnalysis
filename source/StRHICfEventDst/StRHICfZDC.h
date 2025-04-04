@@ -25,7 +25,7 @@ class StRHICfZDC : public TObject
 
         Int_t GetZDCPmtADC(int dir, int pmt);
         Int_t GetZDCPmtTDC(int dir, int pmt);
-        Int_t GetZDCPmtSumADC(int dir); // sum of ADC for pmt
+        Int_t GetZDCPmtSumADC(int dir); // sum of ADC for pmt GetZDCPmtSumADC
         Int_t GetZDCPmtAttenuatedSumADC(int dir); // daq level sum of ADC
         Int_t GetZDCPmtUnAttenuatedSumADC(int dir); // daq level sum of ADC
         Int_t GetZDCPmtSumTDC(int dir); // daq level sum of ADC
