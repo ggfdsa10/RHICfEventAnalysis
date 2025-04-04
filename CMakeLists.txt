@@ -36,10 +36,14 @@ foreach(_directory ${SOURCE_DIRECTORY_LIST})
   file(GLOB ${_name}_HEADER_FILES ${_directory}/*.hh)
 endforeach(_directory)
 
-set(RHICFSIMDST_DIR ${CMAKE_CURRENT_LIST_DIR}/source/StRHICfEventDst)
+set(RHICFDST_DIR 
+  ${CMAKE_CURRENT_LIST_DIR}/source/StRHICfEventDst
+  CACHE INTERNAL ""
+)
+
 link_directories(${LINK_DIRECTORIES})
 
-foreach(_directory ${RHICFSIMDST_DIR})
+foreach(_directory ${RHICFDST_DIR})
   include_directories(${_directory})
 
   string(REPLACE ${CMAKE_SOURCE_DIR} "" tmpString ${_directory})
@@ -48,8 +52,9 @@ foreach(_directory ${RHICFSIMDST_DIR})
   list(APPEND DIR_NAME_LIST ${_name})
   set(${_name}_G_NAME G__${_name}Dict)
   file(GLOB ${_name}_LINKDEF_FILE ${_directory}/LinkDef.h)
-  file(GLOB ${_name}_SOURCE_FILES ${_directory}/St*.cxx)
-  file(GLOB ${_name}_HEADER_FILES ${_directory}/St*.h)
+  file(GLOB ${_name}_SOURCE_FILES ${_directory}/StRHICf*.cxx)
+  file(GLOB ${_name}_HEADER_FILES ${_directory}/StRHICf*.h)
+
 endforeach(_directory)
 
 include_directories( ${ROOT_INCLUDE_DIR} )
