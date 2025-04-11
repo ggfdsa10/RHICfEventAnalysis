@@ -29,25 +29,23 @@ void RHICfMassFitting::Init()
 {
     // mass fitter
     if(mOptContainer->GetParticleRunIdx() == kPi0Run){
-        double massFitLowerBoundary = 25.;
-        double massFitUpperBoundary = 200.;
-        double bkgFitLowerBoundary = 25.;
-        double bkgFitUpperBondary = 200.;
+        double fitLowerBoundary = 40.;
+        double fitUpperBoundary = 220.;
 
         if(!mMassFitter){
-            mMassFitter = new TF1("MassFitter", this, &RHICfMassFitting::Pi0MassFitter, massFitLowerBoundary, massFitUpperBoundary, kMassFitParNum);
+            mMassFitter = new TF1("MassFitter", this, &RHICfMassFitting::Pi0MassFitter, fitLowerBoundary, fitUpperBoundary, kMassFitParNum);
             mMassFitter -> SetParameters(0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
             mMassFitter -> SetLineColor(kBlack);
             mMassFitter -> SetLineWidth(1.5);
         }
         if(!mSignalFitter){
-            mSignalFitter = new TF1("SignalFitter", this, &RHICfMassFitting::Pi0SignalFitter, massFitLowerBoundary, massFitUpperBoundary, 3);
+            mSignalFitter = new TF1("SignalFitter", this, &RHICfMassFitting::Pi0SignalFitter, fitLowerBoundary, fitUpperBoundary, 3);
             mSignalFitter -> SetParameters(0, 0, 0);
             mSignalFitter -> SetLineColor(kRed);
             mSignalFitter -> SetLineWidth(1.5);
         }
         if(!mBkgFitter){
-            mBkgFitter = new TF1("BkgFitter", this, &RHICfMassFitting::Pi0BkgFitter, bkgFitLowerBoundary, bkgFitUpperBondary, 7);
+            mBkgFitter = new TF1("BkgFitter", this, &RHICfMassFitting::Pi0BkgFitter, fitLowerBoundary, fitUpperBoundary, 7);
             mBkgFitter -> SetParameters(0, 0, 0, 0, 0, 0, 0);
             mBkgFitter -> SetLineColor(kBlue);
             mBkgFitter -> SetLineWidth(1.5);
@@ -59,6 +57,65 @@ void RHICfMassFitting::Init()
     }   
 
     mTableMaker -> InitTable("Mass");
+    cout << "RHICfMassFitting::Init() -- Done." << endl;
+}
+
+void RHICfMassFitting::InitMassData()
+{
+    int flag = GetMassTableFlag();
+    for(int run=0; run<kRunNum; run++){
+        for(int type=0; type<kTypeNum; type++){
+            for(int dle=0; dle<kDLENum; dle++){
+                int ptBinNum = mTableMaker->GetTableData("Binning", run, type, dle, 1, -1, -1)-1;
+                int xfBinNum = mTableMaker->GetTableData("Binning", run, type, dle, -1, 1, -1)-1;
+                if(ptBinNum > 0 && xfBinNum > 0){
+                    mMassFitResults[run][type][dle].Resize(ptBinNum, xfBinNum);
+                }
+
+                if(flag == kExistTable){
+                    mMassFitResults[run][type][dle].allMean = mTableMaker->GetTableData("Mass", run, type, dle, -1, -1, 0);
+                    mMassFitResults[run][type][dle].allSigma = mTableMaker->GetTableData("Mass", run, type, dle, -1, -1, 1);
+                    mMassFitResults[run][type][dle].allMassAllCounts = mTableMaker->GetTableData("Mass", run, type, dle, -1, -1, 2);
+                    mMassFitResults[run][type][dle].allMassSignalCounts = mTableMaker->GetTableData("Mass", run, type, dle, -1, -1, 3);
+                    mMassFitResults[run][type][dle].allMassBkgCounts = mTableMaker->GetTableData("Mass", run, type, dle, -1, -1, 4);
+                    mMassFitResults[run][type][dle].allMassPeakDifference = mTableMaker->GetTableData("Mass", run, type, dle, -1, -1, 5);
+                    mMassFitResults[run][type][dle].allMassFitChi2 = mTableMaker->GetTableData("Mass", run, type, dle, -1, -1, 6);
+                    for(int i=0; i<kMassFitParNum; i++){
+                        mMassFitResults[run][type][dle].allPar[i] = mTableMaker->GetTableData("Mass", run, type, dle, -1, -1, 7+i);
+                    }
+
+                    for(int pt=0; pt<ptBinNum; pt++){
+                        for(int xf=0; xf<xfBinNum; xf++){
+                            mMassFitResults[run][type][dle].mean[pt][xf] = mTableMaker->GetTableData("Mass", run, type, dle, pt, xf, 0);
+                            mMassFitResults[run][type][dle].sigma[pt][xf] = mTableMaker->GetTableData("Mass", run, type, dle, pt, xf, 1);
+                            mMassFitResults[run][type][dle].massAllCounts[pt][xf] = mTableMaker->GetTableData("Mass", run, type, dle, pt, xf, 2);
+                            mMassFitResults[run][type][dle].massSignalCounts[pt][xf] = mTableMaker->GetTableData("Mass", run, type, dle, pt, xf, 3);
+                            mMassFitResults[run][type][dle].massBkgCounts[pt][xf] = mTableMaker->GetTableData("Mass", run, type, dle, pt, xf, 4);
+                            mMassFitResults[run][type][dle].massPeakDifference[pt][xf] = mTableMaker->GetTableData("Mass", run, type, dle, pt, xf, 5);
+                            mMassFitResults[run][type][dle].massFitChi2[pt][xf] = mTableMaker->GetTableData("Mass", run, type, dle, pt, xf, 6);
+
+                            for(int i=0; i<kMassFitParNum; i++){
+                                mMassFitResults[run][type][dle].par[i][pt][xf] = mTableMaker->GetTableData("Mass", run, type, dle, pt, xf, 7+i);
+                            }
+                        }
+                    }
+                }
+                else if(flag == kExistPartOfTable){
+                    mMassFitResults[run][type][dle].allMean = mTableMaker->GetTableData("Mass", run, type, dle, -1, -1, 0);
+                    mMassFitResults[run][type][dle].allSigma = mTableMaker->GetTableData("Mass", run, type, dle, -1, -1, 1);
+                    mMassFitResults[run][type][dle].allMassAllCounts = mTableMaker->GetTableData("Mass", run, type, dle, -1, -1, 2);
+                    mMassFitResults[run][type][dle].allMassSignalCounts = mTableMaker->GetTableData("Mass", run, type, dle, -1, -1, 3);
+                    mMassFitResults[run][type][dle].allMassBkgCounts = mTableMaker->GetTableData("Mass", run, type, dle, -1, -1, 4);
+                    mMassFitResults[run][type][dle].allMassPeakDifference = mTableMaker->GetTableData("Mass", run, type, dle, -1, -1, 5);
+                    mMassFitResults[run][type][dle].allMassFitChi2 = mTableMaker->GetTableData("Mass", run, type, dle, -1, -1, 6);
+                    for(int i=0; i<kMassFitParNum; i++){
+                        mMassFitResults[run][type][dle].allPar[i] = mTableMaker->GetTableData("Mass", run, type, dle, -1, -1, 7+i);
+                    }
+                    
+                }
+            }
+        }
+    }
 }
 
 void RHICfMassFitting::InitHist()
@@ -75,15 +132,14 @@ void RHICfMassFitting::InitHist()
                 for(int dle=0; dle<kDLENum; dle++){
                     TString dleName = mOptContainer -> GetDLEName(dle);
                     if(mOptContainer->GetParticleRunIdx() == kPi0Run){
-                        massBins = 250;
+                        massBins = 100;
                         massLowerBoundary = 0.;
-                        massUpperBoundary = 250.;
+                        massUpperBoundary = 300.;
 
                         if(!mMassHistAll[run][type][dle]){
                             mMassHistAll[run][type][dle] = new TH1D(Form("pi0MassHistAll_%s_type%i_%s", runName.Data(), type, dleName.Data()), "", massBins, massLowerBoundary, massUpperBoundary);
                             mMassHistAll[run][type][dle] -> SetStats(0);
                             mMassHistAll[run][type][dle] -> SetTitle(Form("%s Invariant Mass; M_{#gamma#gamma} [MeV/c^{2}]; Counts", (mOptContainer->GetParticleRunName()).Data()));
-                            mMassFitResults[run][type][dle].Resize(0, 0);  
                         }
                         mMassHistAll[run][type][dle] -> Clear("ICESM");
                         
@@ -103,7 +159,9 @@ void RHICfMassFitting::InitHist()
                                     }
                                 }
                             }
-                            mMassFitResults[run][type][dle].Resize(ptNum, xfNum);  
+                            if(mMassFitResults[run][type][dle].mean.size() == 0){
+                                mMassFitResults[run][type][dle].Resize(ptNum, xfNum);  
+                            }
                         }
                     }
                 }
@@ -117,11 +175,11 @@ void RHICfMassFitting::SetBinning(RHICfBinning* binning)
     mBinning = binning;
 }
 
-void RHICfMassFitting::FillMass(int run, int type, int dle, double mass)
+void RHICfMassFitting::FillMass(int runIdx, int typeIdx, int dleIdx, double mass)
 {
     if(mOptContainer->GetParticleRunIdx() == kPi0Run){
-        if(mMassHistAll[run][type][dle]){
-            mMassHistAll[run][type][dle] -> Fill(mass);
+        if(mMassHistAll[runIdx][typeIdx][dleIdx]){
+            mMassHistAll[runIdx][typeIdx][dleIdx] -> Fill(mass);
         }
     }
     if(mOptContainer->GetParticleRunIdx() == kLambda0Run){
@@ -129,11 +187,11 @@ void RHICfMassFitting::FillMass(int run, int type, int dle, double mass)
     }
 }
 
-void RHICfMassFitting::FillMass(int run, int type, int dle, int ptIdx, int xfIdx, double mass)
+void RHICfMassFitting::FillMass(int runIdx, int typeIdx, int dleIdx, int ptIdx, int xfIdx, double mass)
 {
     if(mOptContainer->GetParticleRunIdx() == kPi0Run){
-        if(mMassHistKinematic[run][type][dle][ptIdx][xfIdx]){
-            mMassHistKinematic[run][type][dle][ptIdx][xfIdx] -> Fill(mass);
+        if(mMassHistKinematic[runIdx][typeIdx][dleIdx][ptIdx][xfIdx]){
+            mMassHistKinematic[runIdx][typeIdx][dleIdx][ptIdx][xfIdx] -> Fill(mass);
         }
     }
     if(mOptContainer->GetParticleRunIdx() == kLambda0Run){
@@ -153,8 +211,26 @@ void RHICfMassFitting::Fitting()
 
                     double* par = FitMassHist(mMassHistAll[run][type][dle]);
 
+                    double allLowerBoundary = par[0] - 3.*par[1];
+                    double allUpperBoundary = par[0] + 3.*par[1];
+                    int allLowerBin = mMassHistAll[run][type][dle] -> FindBin(allLowerBoundary);
+                    int allUpperBin = mMassHistAll[run][type][dle] -> FindBin(allUpperBoundary);
+                    mMassHistAll[run][type][dle] -> GetXaxis() -> SetRangeUser(allLowerBin, allUpperBin); 
+                    int allPeakBin = mMassHistAll[run][type][dle]->GetMaximumBin();
+                    double allPeakEntry = mMassHistAll[run][type][dle]->GetBinContent(allPeakBin);
+                    double allFitPeakEntry = mMassFitter -> Eval(mMassHistAll[run][type][dle]->GetBinCenter(allPeakBin));
+                    double allDiffentPeakEntry = fabs(allPeakEntry - allFitPeakEntry);
+
+                    mMassHistAll[run][type][dle] -> GetXaxis() -> UnZoom();
+
                     mMassFitResults[run][type][dle].allMean = par[0];
                     mMassFitResults[run][type][dle].allSigma = par[1];
+                    mMassFitResults[run][type][dle].allMassAllCounts = mMassFitter -> Integral(allLowerBoundary, allUpperBoundary);
+                    mMassFitResults[run][type][dle].allMassSignalCounts = mSignalFitter -> Integral(allLowerBoundary, allUpperBoundary);
+                    mMassFitResults[run][type][dle].allMassBkgCounts = mBkgFitter -> Integral(allLowerBoundary, allUpperBoundary);
+                    mMassFitResults[run][type][dle].allMassPeakDifference = allDiffentPeakEntry;
+                    mMassFitResults[run][type][dle].allMassFitChi2 = mMassFitter -> GetChisquare();
+
                     for(int i=0; i<kMassFitParNum; i++){
                         mMassFitResults[run][type][dle].allPar[i] = par[i];
                     }
@@ -167,8 +243,26 @@ void RHICfMassFitting::Fitting()
 
                             double* par = FitMassHist(mMassHistKinematic[run][type][dle][pt][xf]);
 
+                            double lowerBoundary = par[0] - 3.*par[1];
+                            double upperBoundary = par[0] + 3.*par[1];
+                            int lowerBin = mMassHistKinematic[run][type][dle][pt][xf] -> FindBin(lowerBoundary);
+                            int upperBin = mMassHistKinematic[run][type][dle][pt][xf] -> FindBin(upperBoundary);
+                            mMassHistKinematic[run][type][dle][pt][xf] -> GetXaxis() -> SetRangeUser(lowerBin, upperBin); 
+                            int peakBin = mMassHistKinematic[run][type][dle][pt][xf]->GetMaximumBin();
+                            double peakEntry = mMassHistKinematic[run][type][dle][pt][xf]->GetBinContent(peakBin);
+                            double fitPeakEntry = mMassFitter -> Eval(mMassHistKinematic[run][type][dle][pt][xf]->GetBinCenter(peakBin));
+                            double diffentPeakEntry = fabs(peakEntry - fitPeakEntry);
+
+                            mMassHistKinematic[run][type][dle][pt][xf] -> GetXaxis() -> UnZoom();
+
                             mMassFitResults[run][type][dle].mean[pt][xf] = par[0];
                             mMassFitResults[run][type][dle].sigma[pt][xf] = par[1];
+                            mMassFitResults[run][type][dle].massAllCounts[pt][xf] = mMassFitter -> Integral(par[0]-3.*par[1], par[0]+3.*par[1]);
+                            mMassFitResults[run][type][dle].massSignalCounts[pt][xf] = mSignalFitter -> Integral(par[0]-3.*par[1], par[0]+3.*par[1]);
+                            mMassFitResults[run][type][dle].massBkgCounts[pt][xf] = mBkgFitter -> Integral(par[0]-3.*par[1], par[0]+3.*par[1]);
+                            mMassFitResults[run][type][dle].massPeakDifference[pt][xf] = diffentPeakEntry;
+                            mMassFitResults[run][type][dle].massFitChi2[pt][xf] = mMassFitter -> GetChisquare();
+
                             for(int i=0; i<kMassFitParNum; i++){
                                 mMassFitResults[run][type][dle].par[i][pt][xf] = par[i];
                             }
@@ -203,6 +297,8 @@ void RHICfMassFitting::SaveMassData()
                 data.values.push_back(GetMassAllCounts(run, type, dle));
                 data.values.push_back(GetMassSignalCounts(run, type, dle));
                 data.values.push_back(GetMassBkgCounts(run, type, dle));
+                data.values.push_back(GetMassPeakDifference(run, type, dle));
+                data.values.push_back(GetMassFitChi2(run, type, dle));
 
                 for(int i=0; i<kMassFitParNum; i++){
                     data.values.push_back(mMassFitResults[run][type][dle].allPar[i]);
@@ -227,6 +323,8 @@ void RHICfMassFitting::SaveMassData()
                         data_kinematics.values.push_back(GetMassAllCounts(run, type, dle, pt, xf));
                         data_kinematics.values.push_back(GetMassSignalCounts(run, type, dle, pt, xf));
                         data_kinematics.values.push_back(GetMassBkgCounts(run, type, dle, pt, xf));
+                        data_kinematics.values.push_back(GetMassPeakDifference(run, type, dle, pt, xf));
+                        data_kinematics.values.push_back(GetMassFitChi2(run, type, dle, pt, xf));
 
                         for(int i=0; i<kMassFitParNum; i++){
                             data_kinematics.values.push_back(mMassFitResults[run][type][dle].par[i][pt][xf]);
@@ -242,6 +340,8 @@ void RHICfMassFitting::SaveMassData()
 
 int RHICfMassFitting::GetMassTableFlag()
 {    
+    int particleRunIdx = mOptContainer -> GetParticleRunIdx();
+    if(particleRunIdx == kNeutronRun || particleRunIdx == kGammaRun){return kExistTable;}
     int runIdx = mOptContainer->GetRunType();
     if(runIdx == kALLRun){runIdx = 0;}
     if(mTableMaker -> GetTableData("Mass", runIdx, 0, 3, 1, 1, 0) >= 0){
@@ -253,122 +353,93 @@ int RHICfMassFitting::GetMassTableFlag()
     return kNotExist;
 }
 
-double RHICfMassFitting::GetMassMean(int run, int type, int dle, int ptIdx, int xfIdx)
+double RHICfMassFitting::GetMassMean(int runIdx, int typeIdx, int dleIdx, int ptIdx, int xfIdx)
 {
-    if(ptIdx == -1 && xfIdx == -1){
-        if(GetMassTableFlag() == kNotExist){return mMassFitResults[run][type][dle].allMean;}
-        return mTableMaker->GetTableData("Mass", run, type, dle, -1, -1, 0);
-    }
-    if(GetMassTableFlag() != kExistTable){return mMassFitResults[run][type][dle].mean[ptIdx][xfIdx];}
-    return mTableMaker->GetTableData("Mass", run, type, dle, ptIdx, xfIdx, 0);
+    if(ptIdx == -1 && xfIdx == -1){return mMassFitResults[runIdx][typeIdx][dleIdx].allMean;}
+    return mMassFitResults[runIdx][typeIdx][dleIdx].mean[ptIdx][xfIdx];
 }
 
-double RHICfMassFitting::GetMassSigma(int run, int type, int dle, int ptIdx, int xfIdx)
+double RHICfMassFitting::GetMassSigma(int runIdx, int typeIdx, int dleIdx, int ptIdx, int xfIdx)
 {
-    if(ptIdx == -1 && xfIdx == -1){
-        if(GetMassTableFlag() == kNotExist){return mMassFitResults[run][type][dle].allSigma;}
-        return mTableMaker->GetTableData("Mass", run, type, dle, -1, -1, 1);
-    }
-    if(GetMassTableFlag() != kExistTable){return mMassFitResults[run][type][dle].sigma[ptIdx][xfIdx];}
-    return mTableMaker->GetTableData("Mass", run, type, dle, ptIdx, xfIdx, 1);
+    if(ptIdx == -1 && xfIdx == -1){return mMassFitResults[runIdx][typeIdx][dleIdx].allSigma;}
+    return mMassFitResults[runIdx][typeIdx][dleIdx].sigma[ptIdx][xfIdx];
 }
 
-double RHICfMassFitting::GetMassLowerBoundary(int run, int type, int dle, int ptIdx, int xfIdx)
+double RHICfMassFitting::GetMassLowerBoundary(int runIdx, int typeIdx, int dleIdx, int ptIdx, int xfIdx)
 {
-    return GetMassMean(run, type, dle, ptIdx, xfIdx) - 3. * GetMassSigma(run, type, dle, ptIdx, xfIdx);  
+    return GetMassMean(runIdx, typeIdx, dleIdx, ptIdx, xfIdx) - 3. * GetMassSigma(runIdx, typeIdx, dleIdx, ptIdx, xfIdx);  
 }
 
-double RHICfMassFitting::GetMassUpperBoundary(int run, int type, int dle, int ptIdx, int xfIdx)
+double RHICfMassFitting::GetMassUpperBoundary(int runIdx, int typeIdx, int dleIdx, int ptIdx, int xfIdx)
 {
-    return GetMassMean(run, type, dle, ptIdx, xfIdx) + 3. * GetMassSigma(run, type, dle, ptIdx, xfIdx);  
+    return GetMassMean(runIdx, typeIdx, dleIdx, ptIdx, xfIdx) + 3. * GetMassSigma(runIdx, typeIdx, dleIdx, ptIdx, xfIdx);  
 }
 
-double RHICfMassFitting::GetMassBkgLowerBoundary(int run, int type, int dle, int ptIdx, int xfIdx)
+double RHICfMassFitting::GetMassBkgLowerBoundary(int runIdx, int typeIdx, int dleIdx, int ptIdx, int xfIdx)
 {
-    return GetMassMean(run, type, dle, ptIdx, xfIdx) - 5. * GetMassSigma(run, type, dle, ptIdx, xfIdx);  
+    return GetMassMean(runIdx, typeIdx, dleIdx, ptIdx, xfIdx) - 5. * GetMassSigma(runIdx, typeIdx, dleIdx, ptIdx, xfIdx);  
 }
 
-double RHICfMassFitting::GetMassBkgUpperBoundary(int run, int type, int dle, int ptIdx, int xfIdx)
+double RHICfMassFitting::GetMassBkgUpperBoundary(int runIdx, int typeIdx, int dleIdx, int ptIdx, int xfIdx)
 {
-    return GetMassMean(run, type, dle, ptIdx, xfIdx) + 5. * GetMassSigma(run, type, dle, ptIdx, xfIdx);  
+    return GetMassMean(runIdx, typeIdx, dleIdx, ptIdx, xfIdx) + 5. * GetMassSigma(runIdx, typeIdx, dleIdx, ptIdx, xfIdx);  
 }
 
-double RHICfMassFitting::GetMassAllCounts(int run, int type, int dle, int ptIdx, int xfIdx)
+double RHICfMassFitting::GetMassAllCounts(int runIdx, int typeIdx, int dleIdx, int ptIdx, int xfIdx)
+{
+    if(ptIdx == -1 && xfIdx == -1){return mMassFitResults[runIdx][typeIdx][dleIdx].allMassAllCounts;}
+    return mMassFitResults[runIdx][typeIdx][dleIdx].massAllCounts[ptIdx][xfIdx];
+}
+
+double RHICfMassFitting::GetMassSignalCounts(int runIdx, int typeIdx, int dleIdx, int ptIdx, int xfIdx)
+{
+    if(ptIdx == -1 && xfIdx == -1){return mMassFitResults[runIdx][typeIdx][dleIdx].allMassSignalCounts;}
+    return mMassFitResults[runIdx][typeIdx][dleIdx].massSignalCounts[ptIdx][xfIdx];
+}
+
+double RHICfMassFitting::GetMassBkgCounts(int runIdx, int typeIdx, int dleIdx, int ptIdx, int xfIdx)
+{
+    if(ptIdx == -1 && xfIdx == -1){return mMassFitResults[runIdx][typeIdx][dleIdx].allMassBkgCounts;}
+    return mMassFitResults[runIdx][typeIdx][dleIdx].massBkgCounts[ptIdx][xfIdx];
+}
+
+double RHICfMassFitting::GetMassPeakDifference(int runIdx, int typeIdx, int dleIdx, int ptIdx, int xfIdx)
+{
+    if(ptIdx == -1 && xfIdx == -1){return mMassFitResults[runIdx][typeIdx][dleIdx].allMassPeakDifference;}
+    return mMassFitResults[runIdx][typeIdx][dleIdx].massPeakDifference[ptIdx][xfIdx];
+}
+
+double RHICfMassFitting::GetMassFitPeak(int runIdx, int typeIdx, int dleIdx, int ptIdx, int xfIdx)
 {
     if(ptIdx == -1 && xfIdx == -1){
         for(int i=0; i<kMassFitParNum; i++){
-            double par = 0.;
-            if(GetMassTableFlag() == kNotExist){par = mMassFitResults[run][type][dle].allPar[i];}
-            else{par = mTableMaker->GetTableData("Mass", run, type, dle, -1, -1, 5+i);}
-            mMassFitter -> SetParameter(i, par);
+            mMassFitter -> SetParameter(i, mMassFitResults[runIdx][typeIdx][dleIdx].allPar[i]);
         }
-        return mMassFitter -> Integral(GetMassLowerBoundary(run, type, dle), GetMassUpperBoundary(run, type, dle));
+        return mMassFitter -> Eval(134.);
     }
-
     for(int i=0; i<kMassFitParNum; i++){
-        double par = 0.;
-        if(GetMassTableFlag() == kExistPartOfTable){par = mMassFitResults[run][type][dle].par[i][ptIdx][xfIdx];}
-        else{par = mTableMaker->GetTableData("Mass", run, type, dle, ptIdx, xfIdx, 5+i);}
-        mMassFitter -> SetParameter(i, par);
+        mMassFitter -> SetParameter(i, mMassFitResults[runIdx][typeIdx][dleIdx].par[i][ptIdx][xfIdx]);
     }
-    return mMassFitter -> Integral(GetMassLowerBoundary(run, type, dle, ptIdx, xfIdx), GetMassUpperBoundary(run, type, dle, ptIdx, xfIdx));
+    return mMassFitter -> Eval(134.);              
 }
 
-double RHICfMassFitting::GetMassSignalCounts(int run, int type, int dle, int ptIdx, int xfIdx)
+double RHICfMassFitting::GetMassFitChi2(int runIdx, int typeIdx, int dleIdx, int ptIdx, int xfIdx)
 {
-    if(ptIdx == -1 && xfIdx == -1){
-        for(int i=0; i<3; i++){
-            double par = 0.;
-            if(GetMassTableFlag() == kNotExist){par = mMassFitResults[run][type][dle].allPar[i];}
-            else{par = mTableMaker->GetTableData("Mass", run, type, dle, -1, -1, 5+i);}
-            mSignalFitter -> SetParameter(i, par);
-        }
-        return mSignalFitter -> Integral(GetMassLowerBoundary(run, type, dle), GetMassUpperBoundary(run, type, dle));
-    }
-
-    for(int i=0; i<3; i++){
-        double par = 0.;
-        if(GetMassTableFlag() == kExistPartOfTable){par = mMassFitResults[run][type][dle].par[i][ptIdx][xfIdx];}
-        else{par = mTableMaker->GetTableData("Mass", run, type, dle, ptIdx, xfIdx, 5+i);}
-        mSignalFitter -> SetParameter(i, par);
-    }
-    return mSignalFitter -> Integral(GetMassLowerBoundary(run, type, dle, ptIdx, xfIdx), GetMassUpperBoundary(run, type, dle, ptIdx, xfIdx));
+    if(ptIdx == -1 && xfIdx == -1){return mMassFitResults[runIdx][typeIdx][dleIdx].allMassFitChi2;}
+    return mMassFitResults[runIdx][typeIdx][dleIdx].massFitChi2[ptIdx][xfIdx];
 }
 
-double RHICfMassFitting::GetMassBkgCounts(int run, int type, int dle, int ptIdx, int xfIdx)
+
+TH1D* RHICfMassFitting::GetMassHist(int runIdx, int typeIdx, int dleIdx, int ptIdx, int xfIdx)
 {
     if(ptIdx == -1 && xfIdx == -1){
-        for(int i=3; i<kMassFitParNum; i++){
-            double par = 0.;
-            if(GetMassTableFlag() == kNotExist){par = mMassFitResults[run][type][dle].allPar[i];}
-            else{par = mTableMaker->GetTableData("Mass", run, type, dle, -1, -1, 5+i);}
-            mBkgFitter -> SetParameter(i-3, par);
-        }
-        return mBkgFitter -> Integral(GetMassLowerBoundary(run, type, dle), GetMassUpperBoundary(run, type, dle));
+        return mMassHistAll[runIdx][typeIdx][dleIdx];
     }
-
-    for(int i=3; i<kMassFitParNum; i++){
-        double par = 0.;
-        if(GetMassTableFlag() == kExistPartOfTable){par = mMassFitResults[run][type][dle].par[i][ptIdx][xfIdx];}
-        else{par = mTableMaker->GetTableData("Mass", run, type, dle, ptIdx, xfIdx, 5+i);}
-        mBkgFitter -> SetParameter(i-3, par);
-    }
-    return mBkgFitter -> Integral(GetMassLowerBoundary(run, type, dle, ptIdx, xfIdx), GetMassUpperBoundary(run, type, dle, ptIdx, xfIdx));
-}
-
-TH1D* RHICfMassFitting::GetMassHist(int run, int type, int dle, int ptIdx, int xfIdx)
-{
-    if(ptIdx == -1 && xfIdx == -1){
-        return mMassHistAll[run][type][dle];
-    }
-    return mMassHistKinematic[run][type][dle][ptIdx][xfIdx];
+    return mMassHistKinematic[runIdx][typeIdx][dleIdx][ptIdx][xfIdx];
 }
 
 double* RHICfMassFitting::FitMassHist(TH1D* hist)
 {
-    double par[10];
-    memset(par, 0., sizeof(par));
-
     mMassFitter -> SetParameters(0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
     mSignalFitter -> SetParameters(0, 0, 0);
     mBkgFitter -> SetParameters(0, 0, 0, 0, 0, 0, 0);
@@ -383,6 +454,7 @@ double* RHICfMassFitting::FitMassHist(TH1D* hist)
 
     hist -> Fit(mMassFitter, "QR");
 
+    static double par[10];
     mMassFitter -> GetParameters(par);
 
     mSignalFitter -> FixParameter(0, par[0]);
