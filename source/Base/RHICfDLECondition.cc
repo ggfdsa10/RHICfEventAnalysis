@@ -11,6 +11,7 @@ RHICfDLECondition::~RHICfDLECondition()
 
 void RHICfDLECondition::Init()
 {
+    cout << "RHICfDLECondition::Init() -- Done." << endl;
 }
 
 void RHICfDLECondition::SetBTofMult(int mult)
