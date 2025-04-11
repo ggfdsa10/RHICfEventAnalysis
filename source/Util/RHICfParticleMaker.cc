@@ -82,6 +82,7 @@ MiniParticle RHICfParticleMaker::GetPi0()
         if(pid != kPi0){continue;}
 
         int pi0Type = mParticle -> GetPi0Type();
+        int towerIdx = mParticle -> GetTowerIdx();
         double x = mParticle -> GetRHICfHitPosX();
         double y = mParticle -> GetRHICfHitPosY();
         double e = mParticle -> GetEnergy();
@@ -92,6 +93,9 @@ MiniParticle RHICfParticleMaker::GetPi0()
         double pz = mParticle -> GetPz();
         double m = mParticle -> GetMass();
 
+        if(pi0Type == 2 && towerIdx == kTS){continue;}
+
+        particle.towerIdx.push_back(-1);
         particle.type.push_back(pi0Type);
         particle.x.push_back(x);
         particle.y.push_back(y);
@@ -121,6 +125,7 @@ MiniParticle RHICfParticleMaker::GetNeutron()
         if(pid != kNeutron){continue;}
 
         int towerIdx = mParticle -> GetTowerIdx();
+        int typeIdx = mParticle -> GetTowerIdx();
         double x = mParticle -> GetRHICfHitPosX();
         double y = mParticle -> GetRHICfHitPosY();
         double e = mParticle -> GetEnergy();
@@ -131,6 +136,7 @@ MiniParticle RHICfParticleMaker::GetNeutron()
         double pz = mParticle -> GetPz();
 
         particle.towerIdx.push_back(towerIdx);
+        particle.type.push_back(typeIdx+1);
         particle.x.push_back(x);
         particle.y.push_back(y);
         particle.e.push_back(e);

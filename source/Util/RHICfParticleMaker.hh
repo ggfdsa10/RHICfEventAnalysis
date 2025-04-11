@@ -43,7 +43,6 @@ class RHICfParticleMaker
         MiniParticle GetNeutron();
         MiniParticle GetLambda0();
 
-
         RHICfOptContainer* mOptContainer;
 
         StRHICfEventDst* mEventDst;
