@@ -2,6 +2,11 @@
 #define RHICfAnAnalysis_hh
 
 #include "TMath.h"
+#include "TCanvas.h"
+#include "TH1D.h"
+#include "TH1I.h"
+#include "TLatex.h"
+#include "TLegend.h"
 
 #include "RHICfOptContainer.hh"
 #include "RHICfEventDstReader.hh"
@@ -14,6 +19,7 @@
 #include "RHICfBinning.hh"
 #include "RHICfDilutionFactor.hh"
 #include "RHICfAsymmetry.hh"
+#include "RHICfSystematicError.hh"
 
 #include "StRHICfEventDst.h"
 #include "StRHICfEvent.h"
@@ -33,9 +39,13 @@ class RHICfAnAnalysis : public RHICfOptContainer, RHICfTableMaker
         int Finish();
 
     private:
+        int InitData();
         int MassCalculation();
         int BinningCalculation();
-        int AnCalculation();
+        int DilutionAndPolCalculation();
+        int SystematicErrorCalculation();
+
+        int Test();
 
         // Utilized classes
         RHICfEventDstReader* mEventReader;
@@ -48,6 +58,7 @@ class RHICfAnAnalysis : public RHICfOptContainer, RHICfTableMaker
         RHICfBinning* mBinning;
         RHICfDilutionFactor* mDilution;
         RHICfAsymmetry* mAsymmetry;
+        RHICfSystematicError* mSysError;
 
         // StRHICfEventDst 
         StRHICfEventDst* mEventDst;
