@@ -16,6 +16,7 @@
 #include "RHICfBinning.hh"
 #include "RHICfMassFitting.hh"
 #include "RHICfDilutionFactor.hh"
+#include "RHICfAsymmetry.hh"
 
 using namespace std;
 
@@ -29,18 +30,23 @@ class RHICfFigureDrawing
         void SetBinning(RHICfBinning* binning);
         void SetMassFitting(RHICfMassFitting* fitting);
         void SetDilution(RHICfDilutionFactor* dilution);
+        void SetAsymmetry(RHICfAsymmetry* asymmetry);
 
         void DrawMassHist();
         void DrawBinningHist();
         void DrawDilutionHist();
+        void DrawAsymmetryGraph();
 
     private:
         TString GetSystemString();
+        // int GetMarkerStyleIdx(int idx);
+        // int GetMarkerStyle(int idx);
 
         RHICfOptContainer* mOptContainer;
         RHICfBinning* mBinning;
         RHICfMassFitting* mFitting;
         RHICfDilutionFactor* mDilution;
+        RHICfAsymmetry* mAsymmetry;
 
 };
 
