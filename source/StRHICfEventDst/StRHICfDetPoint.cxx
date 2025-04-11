@@ -17,6 +17,7 @@ void StRHICfDetPoint::clear()
   mParticleID = -999;
 
   memset(mPointPos, 0, sizeof(mPointPos));
+  memset(mRHICfHitPos, 0, sizeof(mRHICfHitPos));
   memset(mPointEnergy, 0, sizeof(mPointEnergy));
   memset(mTowerSumEnergy, 0, sizeof(mTowerSumEnergy));
 }
@@ -27,6 +28,12 @@ void StRHICfDetPoint::SetPointPos(Float_t x, Float_t y)
 {
   mPointPos[0] = x;
   mPointPos[1] = y;
+}
+
+void StRHICfDetPoint::SetRHICfHitPos(Float_t x, Float_t y)
+{
+  mRHICfHitPos[0] = x;
+  mRHICfHitPos[1] = y;
 }
 
 void StRHICfDetPoint::SetPointEnergy(Float_t pid1, Float_t pid2)
@@ -44,5 +51,6 @@ void StRHICfDetPoint::SetTowerSumEnergy(Float_t all, Float_t part)
 Int_t StRHICfDetPoint::GetTowerIdx(){return mTowerIdx;}
 Int_t StRHICfDetPoint::GetPID(){return mParticleID;}
 Float_t StRHICfDetPoint::GetPointPos(Int_t xy){return mPointPos[xy];}
+Float_t StRHICfDetPoint::GetRHICfHitPos(Int_t xy){return mRHICfHitPos[xy];}
 Float_t StRHICfDetPoint::GetPointEnergy(Int_t particle){return mPointEnergy[particle];}
 Float_t StRHICfDetPoint::GetTowerSumEnergy(Int_t order){return mTowerSumEnergy[order];}
