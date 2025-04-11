@@ -16,8 +16,54 @@ void RHICfBinning::Init()
     mPtBins = 5;
     mXfBins = 4;
 
-    Pi0GlobalBinning();
+    mTableMaker -> InitTable("Binning");
 
+    int particleRunType = mOptContainer -> GetParticleRunIdx();
+    if(particleRunType == kPi0Run){Pi0GlobalBinning();}
+    if(particleRunType == kNeutronRun){ NeutronGlobalBinning();}
+
+    DefaultBinning();
+   
+    cout << "RHICfBinning::Init() -- Done." << endl;
+}
+
+void RHICfBinning::InitBinningData()
+{
+    if(GetBinningTableFlag() == kExistTable){
+        for(int run=0; run<kRunNum; run++){
+            for(int type=0; type<kTypeNum; type++){
+                for(int dle=0; dle<kDLENum; dle++){
+                    int ptBoundaryNum = mTableMaker->GetTableData("Binning", run, type, dle, 1, -1, -1);
+                    int xfBoundaryNum = mTableMaker->GetTableData("Binning", run, type, dle, -1, 1, -1);
+                    if(ptBoundaryNum > 0 && xfBoundaryNum > 0){    
+                        mPtBoundary[run][type][dle].resize(ptBoundaryNum);
+                        mXfBoundary[run][type][dle].resize(xfBoundaryNum);
+                        for(int pt=0; pt<ptBoundaryNum; pt++){
+                            mPtBoundary[run][type][dle][pt] = mTableMaker->GetTableData("Binning", run, type, dle, 1, -1, pt);
+                        }
+                        for(int xf=0; xf<xfBoundaryNum; xf++){
+                            mXfBoundary[run][type][dle][xf] = mTableMaker->GetTableData("Binning", run, type, dle, -1, 1, xf);
+                        }
+
+                        int ptBinNum = ptBoundaryNum-1;
+                        int xfBinNum = xfBoundaryNum-1;
+                        mPtMean[run][type][dle].resize(ptBinNum, vector<double>(xfBinNum));
+                        mXfMean[run][type][dle].resize(ptBinNum, vector<double>(xfBinNum));
+                        for(int pt=0; pt<ptBinNum; pt++){
+                            for(int xf=0; xf<xfBinNum; xf++){
+                                mPtMean[run][type][dle][pt][xf] = mTableMaker->GetTableData("Binning", run, type, dle, pt, xf, 0);
+                                mXfMean[run][type][dle][pt][xf] = mTableMaker->GetTableData("Binning", run, type, dle, pt, xf, 1);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+void RHICfBinning::InitHist()
+{
     TString particleName = mOptContainer -> GetParticleRunName();
     for(int run=0; run<kRunNum; run++){
         TString runName = mOptContainer -> GetRunTypeName(run);
@@ -27,7 +73,6 @@ void RHICfBinning::Init()
                 
                 mPtHist[run][type][dle] = new TH1D(Form("pTHist_%s_%s_type%i_%s", particleName.Data(), runName.Data(), type+1, dleName.Data()), "", mLocalBinNum, 0., 1.);
                 mXfHist[run][type][dle] = new TH1D(Form("xFHist_%s_%s_type%i_%s", particleName.Data(), runName.Data(), type+1,dleName.Data()), "", mLocalBinNum, 0., 1.);
-                mPtXfBinHist[run][type][dle] = new TH2D(Form("ptxfBinHist_%s_%s_type%i_%s", particleName.Data(), runName.Data(), type+1,dleName.Data()), "", mLocalBinNum, 0., 1., mLocalBinNum, 0., 1.);
                 mKinematicsHist[run][type][dle] = new TH2D(Form("KinematicsHist_%s_%s_type%i_%s", particleName.Data(), runName.Data(), type+1, dleName.Data()), "", 100, 0., 1., 100, 0., 1.);
 
                 mPtHist[run][type][dle] -> SetStats(0);
@@ -41,153 +86,57 @@ void RHICfBinning::Init()
                 mPtHist[run][type][dle] -> Sumw2();
                 mXfHist[run][type][dle] -> Sumw2();
 
-                mPtBoundary[run][type][dle].clear();
-                mXfBoundary[run][type][dle].clear();
 
-                mPtMean[run][type][dle].clear();
-                mXfMean[run][type][dle].clear();
+                for(int ptBin=0; ptBin<GetPtBinNum(run, type, dle); ptBin++){
+                    for(int xfBin=0; xfBin<GetXfBinNum(run, type, dle); xfBin++){
+                        mPtMean[run][type][dle][ptBin][xfBin] = 0.;
+                        mXfMean[run][type][dle][ptBin][xfBin] = 0.;
+                        mPtMeanNum[run][type][dle][ptBin][xfBin] = 0.;
+                        mXfMeanNum[run][type][dle][ptBin][xfBin] = 0.;
+                    }
+                }
             }
         }
     }
-
-    mTableMaker -> InitTable("Binning");
 }
 
 void RHICfBinning::FillKinematics(int runIdx, int typeIdx, int dleIdx, double pt, double xf)
 {
     mPtHist[runIdx][typeIdx][dleIdx] -> Fill(pt);
     mXfHist[runIdx][typeIdx][dleIdx] -> Fill(xf);
-    mPtXfBinHist[runIdx][typeIdx][dleIdx] -> Fill(xf, pt);
     mKinematicsHist[runIdx][typeIdx][dleIdx] -> Fill(xf, pt);
+
+    for(int ptBin=0; ptBin<GetPtBinNum(runIdx, typeIdx, dleIdx); ptBin++){
+        double ptLowerBoundary = GetPtBinBoundary(runIdx, typeIdx, dleIdx, ptBin);
+        double ptUpperBoundary = GetPtBinBoundary(runIdx, typeIdx, dleIdx, ptBin+1);
+
+        for(int xfBin=0; xfBin<GetXfBinNum(runIdx, typeIdx, dleIdx); xfBin++){
+            double xfLowerBoundary = GetXfBinBoundary(runIdx, typeIdx, dleIdx, xfBin);
+            double xfUpperBoundary = GetXfBinBoundary(runIdx, typeIdx, dleIdx, xfBin+1);
+            
+            if(ptLowerBoundary <= pt && pt < ptUpperBoundary){
+                if(xfLowerBoundary <= xf && xf < xfUpperBoundary){
+                    mPtMean[runIdx][typeIdx][dleIdx][ptBin][xfBin] += pt;
+                    mXfMean[runIdx][typeIdx][dleIdx][ptBin][xfBin] += xf;
+                    mPtMeanNum[runIdx][typeIdx][dleIdx][ptBin][xfBin] += 1.;
+                    mXfMeanNum[runIdx][typeIdx][dleIdx][ptBin][xfBin] += 1.;
+                }
+            }
+        }
+    }
 }
 
 void RHICfBinning::Binning()
 {
-    TH1D* projectionXf;
-    TH1D* projectionPt;
     for(int run=0; run<kRunNum; run++){
         for(int type=0; type<kTypeNum; type++){
             for(int dle=0; dle<kDLENum; dle++){
-                vector<int> mXfBoundBinIdx;
-                vector<int> mPtBoundBinIdx;
-                mXfBoundBinIdx.clear();
-                mPtBoundBinIdx.clear();
-
-                // Xf Binning 
-                double xfTotalEntry = 0.;
-                for(int xf=0; xf<mLocalBinNum; xf++){
-                    double entry = mXfHist[run][type][dle]->GetBinContent(xf+1);
-                    if(entry < 1){continue;}
-
-                    projectionPt = (TH1D*)mPtXfBinHist[run][type][dle]->ProjectionY(Form("project_%i_%i_%i_xf%i", run, type, dle, xf), xf+1, xf+1);
-                    double ptMean = projectionPt -> GetMean();
-                    if(ptMean < 0.00001){continue;}
-
-                    double normEntry = entry/ptMean;
-                    mXfHist[run][type][dle] -> SetBinContent(xf+1, normEntry);
-                    xfTotalEntry += normEntry;
-                }
-
-                double xfNumByBin = xfTotalEntry/double(mXfBins);
-                double tmpXfEntrySum = 0.;
-
-                mXfBoundBinIdx.push_back(1);
-                mXfBoundary[run][type][dle].push_back(0.);
-                for(int xf=0; xf<mLocalBinNum; xf++){
-                    double entry = mXfHist[run][type][dle] -> GetBinContent(xf+1);
-                    tmpXfEntrySum += entry;
-
-                    if(tmpXfEntrySum > xfNumByBin){
-                        double binCenter = mXfHist[run][type][dle] -> GetBinCenter(xf+1);
-                        double binWidth = mXfHist[run][type][dle] -> GetBinWidth(xf+1);
-                        double binBondary = binCenter + binWidth/2.;
-
-                        mXfBoundBinIdx.push_back(xf+1);
-                        mXfBoundary[run][type][dle].push_back(binBondary);
-                        tmpXfEntrySum = 0;
-                    }
-                }
-                mXfBoundBinIdx.push_back(mLocalBinNum);
-                mXfBoundary[run][type][dle].push_back(1.);
-
-
-                // Pt Binning 
-                double ptTotalEntry = 0.;
-                for(int pt=0; pt<mLocalBinNum; pt++){
-                    double entry = mPtHist[run][type][dle]->GetBinContent(pt+1);
-                    if(entry < 1){continue;}
-
-                    projectionXf = (TH1D*)mPtXfBinHist[run][type][dle]->ProjectionX(Form("project_%i_%i_%i_pt%i", run, type, dle, pt), pt+1, pt+1);
-                    double xfMean = projectionXf -> GetMean();
-                    if(xfMean < 0.00001){continue;}
-
-                    double normEntry = entry/xfMean;
-                    mPtHist[run][type][dle] -> SetBinContent(pt+1, normEntry);
-                    ptTotalEntry += normEntry;
-                }
-
-                double ptNumByBin = ptTotalEntry/double(mPtBins);
-                double tmpPtEntrySum = 0.;
-
-                mPtBoundBinIdx.push_back(1);
-                mPtBoundary[run][type][dle].push_back(0.);
-                for(int pt=0; pt<mLocalBinNum; pt++){
-                    double entry = mPtHist[run][type][dle] -> GetBinContent(pt+1);
-                    tmpPtEntrySum += entry;
-
-                    if(tmpPtEntrySum > ptNumByBin){
-                        double binCenter = mPtHist[run][type][dle] -> GetBinCenter(pt+1);
-                        double binWidth = mPtHist[run][type][dle] -> GetBinWidth(pt+1);
-                        double binBondary = binCenter + binWidth/2.;
-
-                        mPtBoundBinIdx.push_back(pt+1);
-                        mPtBoundary[run][type][dle].push_back(binBondary);
-                        tmpPtEntrySum = 0;
-                    }
-                }
-                mPtBoundBinIdx.push_back(mLocalBinNum);
-                mPtBoundary[run][type][dle].push_back(1.);
-
-
-                // Find mean value in binning
-                int ptNum = GetPtBinNum(run, type, dle);
-                int xfNum = GetXfBinNum(run, type, dle);
-
-                mPtMean[run][type][dle].resize(ptNum, vector<double>(xfNum));
-                mXfMean[run][type][dle].resize(ptNum, vector<double>(xfNum));
-
-                for(int pt=0; pt<ptNum; pt++){
-                    for(int xf=0; xf<xfNum; xf++){
-                        int xfBinIdx_lower = mXfBoundBinIdx[xf];
-                        int ptBinIdx_lower = mPtBoundBinIdx[pt];
-                        int xfBinIdx_upper = mXfBoundBinIdx[xf+1];
-                        int ptBinIdx_upper = mPtBoundBinIdx[pt+1];
-
-                        double entrySum = 0.;
-                        double xfWeightSum = 0.;
-                        double ptWeightSum = 0.;
-
-                        for(int ptBin=ptBinIdx_lower; ptBin<ptBinIdx_upper; ptBin++){
-                            for(int xfBin=xfBinIdx_lower; xfBin<xfBinIdx_upper; xfBin++){
-                                double entry = mPtXfBinHist[run][type][dle] -> GetBinContent(xfBin, ptBin);
-                                double ptValue = double(ptBin)/double(mLocalBinNum)+(1./double(mLocalBinNum*2));
-                                double xfValue = double(xfBin)/double(mLocalBinNum)+(1./double(mLocalBinNum*2));
-
-                                entrySum += entry;
-                                ptWeightSum += (ptValue * entry);
-                                xfWeightSum += (xfValue * entry);
-                            }
-                        }
-
-                        ptWeightSum = ptWeightSum/entrySum;
-                        xfWeightSum = xfWeightSum/entrySum;
-                        if(entrySum < 10){
-                            ptWeightSum = -1.;
-                            xfWeightSum = -1.;
-                        }
-
-                        mPtMean[run][type][dle][pt][xf] = ptWeightSum;
-                        mXfMean[run][type][dle][pt][xf] = xfWeightSum;
+                for(int ptBin=0; ptBin<GetPtBinNum(run, type, dle); ptBin++){
+                    for(int xfBin=0; xfBin<GetPtBinNum(run, type, dle); xfBin++){
+                        mPtMean[run][type][dle][ptBin][xfBin] /= mPtMeanNum[run][type][dle][ptBin][xfBin];
+                        mXfMean[run][type][dle][ptBin][xfBin] /= mXfMeanNum[run][type][dle][ptBin][xfBin];  
+                        if(mPtMeanNum[run][type][dle][ptBin][xfBin] <= 1){mPtMean[run][type][dle][ptBin][xfBin] = 0.;}                      
+                        if(mXfMeanNum[run][type][dle][ptBin][xfBin] <= 1){mXfMean[run][type][dle][ptBin][xfBin] = 0.;}                      
                     }
                 }
             }
@@ -258,62 +207,60 @@ int RHICfBinning::GetBinningTableFlag()
 
 int RHICfBinning::GetPtBinNum(int runIdx, int typeIdx, int dleIdx)
 {
-    if(GetBinningTableFlag() == kNotExist){return int(mPtBoundary[runIdx][typeIdx][dleIdx].size()-1);}
-    return int(mTableMaker->GetTableData("Binning", runIdx, typeIdx, dleIdx, 1, -1, -1)-1);
+    return int(mPtBoundary[runIdx][typeIdx][dleIdx].size()-1);
 }
 
 int RHICfBinning::GetXfBinNum(int runIdx, int typeIdx, int dleIdx)
 {
-    if(GetBinningTableFlag() == kNotExist){return int(mXfBoundary[runIdx][typeIdx][dleIdx].size()-1);}
-    return int(mTableMaker->GetTableData("Binning", runIdx, typeIdx, dleIdx, -1, 1, -1)-1);
+    return int(mXfBoundary[runIdx][typeIdx][dleIdx].size()-1);
 }
 
 double RHICfBinning::GetPtBinBoundary(int runIdx, int typeIdx, int dleIdx, int ptIdx)
 {
-    if(GetBinningTableFlag() == kNotExist){return mPtBoundary[runIdx][typeIdx][dleIdx][ptIdx];}
-    return mTableMaker->GetTableData("Binning", runIdx, typeIdx, dleIdx, 1, -1, ptIdx);
+    if(GetPtBinNum(runIdx, typeIdx, dleIdx) < 0){return -999.;}
+    return mPtBoundary[runIdx][typeIdx][dleIdx][ptIdx];
 }
 
 double RHICfBinning::GetXfBinBoundary(int runIdx, int typeIdx, int dleIdx, int xfIdx)
 {
-    if(GetBinningTableFlag() == kNotExist){return mXfBoundary[runIdx][typeIdx][dleIdx][xfIdx];}
-    return mTableMaker->GetTableData("Binning", runIdx, typeIdx, dleIdx, -1, 1, xfIdx);
+    if(GetXfBinNum(runIdx, typeIdx, dleIdx) < 0){return -999.;}
+    return mXfBoundary[runIdx][typeIdx][dleIdx][xfIdx];
 }
 
 double RHICfBinning::GetPtBinMean(int runIdx, int typeIdx, int dleIdx, int ptIdx, int xfIdx)
 {
-    if(GetBinningTableFlag() == kNotExist){return mPtMean[runIdx][typeIdx][dleIdx][ptIdx][xfIdx];}
-    return mTableMaker->GetTableData("Binning", runIdx, typeIdx, dleIdx, ptIdx, xfIdx, 0);
+    if(mPtMean[runIdx][typeIdx][dleIdx].size() < 0){return -999.;}
+    if(mPtMean[runIdx][typeIdx][dleIdx][ptIdx].size() < 0){return -999.;}
+    return mPtMean[runIdx][typeIdx][dleIdx][ptIdx][xfIdx];
 }
 
 double RHICfBinning::GetXfBinMean(int runIdx, int typeIdx, int dleIdx, int ptIdx, int xfIdx)
 {
-    if(GetBinningTableFlag() == kNotExist){return mXfMean[runIdx][typeIdx][dleIdx][ptIdx][xfIdx];}
-    return mTableMaker->GetTableData("Binning", runIdx, typeIdx, dleIdx, ptIdx, xfIdx, 1);
+    if(mXfMean[runIdx][typeIdx][dleIdx].size() < 0){return -999.;}
+    if(mXfMean[runIdx][typeIdx][dleIdx][ptIdx].size() < 0){return -999.;}
+    return mXfMean[runIdx][typeIdx][dleIdx][ptIdx][xfIdx];
 }
 
 int RHICfBinning::GetGlobalPtBinNum()
 {
-    if(GetBinningTableFlag() == kNotExist){return int(mGlobalPtBoundary.size()-1);}
-    return int(mTableMaker->GetTableData("Binning", 0, 0, 0, 1, -1, -1)-1);
+    return int(mGlobalPtBoundary.size()-1);
 }
 
 int RHICfBinning::GetGlobalXfBinNum()
 {
-    if(GetBinningTableFlag() == kNotExist){return int(mGlobalXfBoundary.size()-1);}
-    return int(mTableMaker->GetTableData("Binning", 0, 0, 0, -1, 1, -1)-1);
+    return int(mGlobalXfBoundary.size()-1);
 }
 
 double RHICfBinning::GetGlobalPtBinBoundary(int ptIdx)
 {
-    if(GetBinningTableFlag() == kNotExist){return mGlobalPtBoundary[ptIdx];}
-    return mTableMaker->GetTableData("Binning", 0, 0, 0, 1, -1, ptIdx);
+    if(GetGlobalPtBinNum() < 0){return -999.;}
+    return mGlobalPtBoundary[ptIdx];
 }
 
 double RHICfBinning::GetGlobalXfBinBoundary(int xfIdx)
 {
-    if(GetBinningTableFlag() == kNotExist){return mGlobalXfBoundary[xfIdx];}
-    return mTableMaker->GetTableData("Binning", 0, 0, 0, -1, 1, xfIdx);
+    if(GetGlobalXfBinNum() < 0){return -999.;}
+    return mGlobalXfBoundary[xfIdx];
 }
 
 TH1D* RHICfBinning::GetPtHist(int runIdx, int typeIdx, int dleIdx){return mPtHist[runIdx][typeIdx][dleIdx];}
@@ -339,4 +286,50 @@ void RHICfBinning::Pi0GlobalBinning()
     mGlobalPtBoundary.push_back(0.50);
     mGlobalPtBoundary.push_back(0.69);
     mGlobalPtBoundary.push_back(1.00);
+}
+
+void RHICfBinning::NeutronGlobalBinning()
+{
+    mGlobalPtBoundary.clear();
+    mGlobalXfBoundary.clear();
+
+    // RHICf Collaboration, PRD 109, 012003 (2024)
+    mGlobalXfBoundary.push_back(0.2);
+    mGlobalXfBoundary.push_back(0.4);
+    mGlobalXfBoundary.push_back(0.6);
+    mGlobalXfBoundary.push_back(0.8);
+    mGlobalXfBoundary.push_back(1.0);
+
+    mGlobalPtBoundary.push_back(0.00);
+    mGlobalPtBoundary.push_back(0.1);
+    mGlobalPtBoundary.push_back(0.2);
+    mGlobalPtBoundary.push_back(0.35);
+    mGlobalPtBoundary.push_back(0.55);
+    mGlobalPtBoundary.push_back(0.85);
+}
+
+void RHICfBinning::DefaultBinning()
+{
+    for(int run=0; run<kRunNum; run++){
+        for(int type=0; type<kTypeNum; type++){
+            for(int dle=0; dle<kDLENum; dle++){
+
+                int globalPtNum = GetGlobalPtBinNum()+1;
+                for(int pt=0; pt<globalPtNum; pt++){
+                    mPtBoundary[run][type][dle].push_back(GetGlobalPtBinBoundary(pt));
+                }
+
+                int globalXfNum = GetGlobalXfBinNum()+1;
+                for(int xf=0; xf<globalXfNum; xf++){
+                    mXfBoundary[run][type][dle].push_back(GetGlobalXfBinBoundary(xf));
+                }
+
+                mPtMean[run][type][dle].resize(globalPtNum, vector<double>(globalXfNum));
+                mXfMean[run][type][dle].resize(globalPtNum, vector<double>(globalXfNum));
+
+                mPtMeanNum[run][type][dle].resize(globalPtNum, vector<double>(globalXfNum));
+                mXfMeanNum[run][type][dle].resize(globalPtNum, vector<double>(globalXfNum));
+            }
+        }
+    }
 }

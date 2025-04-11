@@ -14,6 +14,8 @@ class RHICfBinning
         ~RHICfBinning();
 
         void Init();
+        void InitBinningData();
+        void InitHist();
 
         void FillKinematics(int runIdx, int typeIdx, int dleIdx, double pt, double xf);
 
@@ -40,13 +42,14 @@ class RHICfBinning
 
     private:
         void Pi0GlobalBinning();
+        void NeutronGlobalBinning();
+        void DefaultBinning();
 
         RHICfOptContainer* mOptContainer;
         RHICfTableMaker* mTableMaker;
 
         TH1D* mPtHist[kRunNum][kTypeNum][kDLENum]; 
         TH1D* mXfHist[kRunNum][kTypeNum][kDLENum]; 
-        TH2D* mPtXfBinHist[kRunNum][kTypeNum][kDLENum]; 
         TH2D* mKinematicsHist[kRunNum][kTypeNum][kDLENum];
 
         vector<double> mGlobalPtBoundary;
@@ -55,6 +58,8 @@ class RHICfBinning
         vector<double> mXfBoundary[kRunNum][kTypeNum][kDLENum];
         vector<vector<double> > mPtMean[kRunNum][kTypeNum][kDLENum];
         vector<vector<double> > mXfMean[kRunNum][kTypeNum][kDLENum];
+        vector<vector<double> > mPtMeanNum[kRunNum][kTypeNum][kDLENum];
+        vector<vector<double> > mXfMeanNum[kRunNum][kTypeNum][kDLENum];
 
         int mLocalBinNum;
         int mPtBins;
