@@ -38,10 +38,13 @@ class RHICfTableMaker
         int InitTable(TString tableName);
         int SaveTable(TString tableName, vector<TableData> table);
         double GetTableData(TString tableName, int runIdx, int typeIdx, int dleIdx, int ptIdx, int xfIdx, int valueIdx);
+        double GetTableData(TString tableName, int runIdx, int typeIdx, int dleIdx, int ptIdx, int xfIdx, int valueIdx, int valueIdx2);
 
     private:
         int FindTableIdx(TString tableName);
         double FindTable(vector<TableData> table, int runIdx, int typeIdx, int dleIdx, int ptIdx, int xfIdx, int valueIdx);
+        double FindTable(vector<TableData> table, int runIdx, int typeIdx, int dleIdx, int ptIdx, int xfIdx, int valueIdx, int valueIdx2);
+        
         int ReadTable(TString tableName, vector<TableData> &tableData);
         int MakeTable(TString tableName, vector<TableData> &tableData);
 

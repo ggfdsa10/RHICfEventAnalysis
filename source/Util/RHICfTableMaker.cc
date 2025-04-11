@@ -69,6 +69,15 @@ double RHICfTableMaker::GetTableData(TString tableName, int runIdx, int typeIdx,
     return -999.;
 }
 
+double RHICfTableMaker::GetTableData(TString tableName, int runIdx, int typeIdx, int dleIdx, int ptIdx, int xfIdx, int valueIdx, int valueIdx2)
+{
+    int tableIdx = FindTableIdx(tableName);
+    if(tableIdx != -1){
+        return FindTable(mTable[tableIdx], runIdx, typeIdx, dleIdx, ptIdx, xfIdx, valueIdx, valueIdx2);
+    }
+    return -999.;
+}
+
 int RHICfTableMaker::FindTableIdx(TString tableName)
 {
     tableName.ToUpper();
@@ -95,6 +104,27 @@ double RHICfTableMaker::FindTable(vector<TableData> table, int runIdx, int typeI
         if(valueIdx == -1){return double(valueNum);}
         for(int j=0; j<valueNum; j++){
             if(j != valueIdx){continue;}
+            return table[i].values[j];
+        }
+    }
+    return -999.;
+}
+
+double RHICfTableMaker::FindTable(vector<TableData> table, int runIdx, int typeIdx, int dleIdx, int ptIdx, int xfIdx, int valueIdx, int valueIdx2)
+{
+    int tableNum = table.size();
+    for(int i=0; i<tableNum; i++){
+        if(table[i].runIdx != runIdx){continue;}
+        if(table[i].typeIdx != typeIdx){continue;}
+        if(table[i].dleIdx != dleIdx){continue;}
+        if(table[i].ptIdx != ptIdx){continue;}
+        if(table[i].xfIdx != xfIdx){continue;}
+
+        if(table[i].values.size() == 1){break;}
+        if(int(table[i].values[0]) != valueIdx){continue;}
+        int valueNum = table[i].values.size();
+        for(int j=0; j<valueNum; j++){
+            if(j != valueIdx2+1){continue;}
             return table[i].values[j];
         }
     }
