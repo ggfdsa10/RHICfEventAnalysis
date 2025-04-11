@@ -56,6 +56,11 @@ class RHICfOptContainer
 
         void ForceCalculateMass();
         void ForceCalculateBinning();
+        void ForceCalculateDilution();
+        void ForceCalculateAsymmetry();
+        void ForceCalculateSystematicError();
+
+        void ForceDefaultBinning();
 
         // specific particle calculation option
         void CalculateGamma();
@@ -93,6 +98,11 @@ class RHICfOptContainer
 
         bool IsForceCalculateMass();
         bool IsForceCalculateBinning();
+        bool IsForceCalculateDilution();
+        bool IsForceCalculateAsymmetry();
+        bool IsForceCalculateSystematicError();
+
+        bool IsForceDefaultBinning();
 
         bool GetOffDetPoint();
         bool GetOffParticle();
@@ -110,6 +120,7 @@ class RHICfOptContainer
     private:
         void InitOptions();
         void FindDirPath();
+        void PrintOptions();
 
         static RHICfOptContainer* mOptContainer;
         
@@ -129,6 +140,11 @@ class RHICfOptContainer
 
         bool mForceCalculateMass;
         bool mForceCalculateBinning;
+        bool mForceCalculateDilution;
+        bool mForceCalculateAsymmetry;
+        bool mForceCalculateSystematicError;
+        
+        bool mForceDefaultBinning;
 
         bool mOffDetPoint;
         bool mOffParticle;

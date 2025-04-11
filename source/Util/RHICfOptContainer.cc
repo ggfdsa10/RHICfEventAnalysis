@@ -32,6 +32,7 @@ int RHICfOptContainer::Init()
         cout << "RHICfOptContainer::Init() -- Error: set to only one particle calculation option!" << endl;
         return 0;
     }
+    PrintOptions();
 
     return 1;
 }
@@ -52,6 +53,11 @@ void RHICfOptContainer::SetExecuteFileNum(int num){mExecuteFileNum = num;}
 
 void RHICfOptContainer::ForceCalculateMass(){mForceCalculateMass = true;}
 void RHICfOptContainer::ForceCalculateBinning(){mForceCalculateBinning = true;}
+void RHICfOptContainer::ForceCalculateDilution(){mForceCalculateDilution = true;}
+void RHICfOptContainer::ForceCalculateAsymmetry(){mForceCalculateAsymmetry = true;}
+void RHICfOptContainer::ForceCalculateSystematicError(){mForceCalculateSystematicError = true;}
+
+void RHICfOptContainer::ForceDefaultBinning(){mForceDefaultBinning = true;}
 
 void RHICfOptContainer::CalculateGamma(){mGammaCalc = true;}
 void RHICfOptContainer::CalculatePi0(){mPi0Calc = true;}
@@ -96,7 +102,6 @@ int RHICfOptContainer::GetFillToRunIdx(int fillIdx)
     return kALLRun;
 }
 
-
 TString RHICfOptContainer::GetRunTypeName(int runIdx)
 {
     if(runIdx == kTLRun){return "TL";}
@@ -123,6 +128,11 @@ int RHICfOptContainer::GetExecuteFileNum(){return mExecuteFileNum;}
 
 bool RHICfOptContainer::IsForceCalculateMass(){return mForceCalculateMass;}
 bool RHICfOptContainer::IsForceCalculateBinning(){return mForceCalculateBinning;}
+bool RHICfOptContainer::IsForceCalculateDilution(){return mForceCalculateDilution;}
+bool RHICfOptContainer::IsForceCalculateAsymmetry(){return mForceCalculateAsymmetry;}
+bool RHICfOptContainer::IsForceCalculateSystematicError(){return mForceCalculateSystematicError;}
+
+bool RHICfOptContainer::IsForceDefaultBinning(){return mForceDefaultBinning;}
 
 bool RHICfOptContainer::GetOffDetPoint(){return mOffDetPoint;}
 bool RHICfOptContainer::GetOffParticle(){return mOffParticle;}
@@ -170,6 +180,11 @@ void RHICfOptContainer::InitOptions()
 
     mForceCalculateMass = false;
     mForceCalculateBinning = false;
+    mForceCalculateDilution = false;
+    mForceCalculateAsymmetry = false;
+    mForceCalculateSystematicError = false;
+    
+    mForceDefaultBinning = false;
 
     mOffDetPoint = false;
     mOffParticle = false;
@@ -219,4 +234,30 @@ void RHICfOptContainer::FindDirPath()
             }
         }
     }
+}
+
+void RHICfOptContainer::PrintOptions()
+{
+    cout << "== RHICfOptContainer::PrintOptions()" << endl;
+    cout << "== Calculate Run Type: " << GetRunTypeName(GetRunType()) << endl;
+    cout << "== Calculate Particle Type: " << GetParticleRunName() << endl;
+    cout << "== Input Data Path: " << GetInputDataPath() << endl;
+    cout << "== Input Data List: " << ((GetInputDataList() == "")? "Autometic : " : GetInputDataList()) << endl; 
+    cout << "== Table Data Path: " << GetTablePath() << endl;
+    cout << "== Output Data Path: " << GetDataPath() << endl;
+    cout << "== Figure Data Path: " << GetFigurePath() << endl;
+    cout << "== Execute Event Number: " << GetExecuteEventNum() << endl;
+    cout << "== Execute Input File Number: " << GetExecuteFileNum() << endl;
+    cout << "== Force to Calculate Mass: " << ((IsForceCalculateMass() == true)? "TRUE" : "FALSE") << endl;
+    cout << "== Force to Calculate Binning: " << ((IsForceCalculateBinning() == true)? "TRUE" : "FALSE") << endl;
+    cout << "== Detector data ON-OFF:" << endl;
+    cout << "     RHICfDetPoint : " << ((GetOffDetPoint() == false)? "ON" : "OFF") << endl;
+    cout << "     RHICfParticle : " << ((GetOffParticle() == false)? "ON" : "OFF") << endl;
+    cout << "     TPCTrack      : " << ((GetOffTPCTrack() == false)? "ON" : "OFF") << endl;
+    cout << "     B-TOF         : " << ((GetOffBTof() == false)? "ON" : "OFF") << endl;
+    cout << "     BBC           : " << ((GetOffBBC() == false)? "ON" : "OFF") << endl;
+    cout << "     VPD           : " << ((GetOffVPD() == false)? "ON" : "OFF") << endl;
+    cout << "     ZDC           : " << ((GetOffZDC() == false)? "ON" : "OFF") << endl;
+    cout << "     FMS           : " << ((GetOffFMS() == false)? "ON" : "OFF") << endl;
+    cout << "     RPS           : " << ((GetOffRPS() == false)? "ON" : "OFF") << endl;
 }
