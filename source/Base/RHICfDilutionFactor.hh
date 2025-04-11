@@ -18,6 +18,7 @@ class RHICfDilutionFactor
         ~RHICfDilutionFactor();
 
         void Init();
+        void InitDilutionData();
         void InitHist();
 
         void SetBinning(RHICfBinning* binning);
@@ -38,7 +39,7 @@ class RHICfDilutionFactor
         RHICfBinning* mBinning;
 
         vector<vector<TH1D*> > mDilutionHist[kRunNum][kTypeNum][kDLENum];
-        vector<vector<double> > mDilutionFactor[kRunNum][kTypeNum][kDLENum];
+        vector<vector<double> > mDilutionFactor[kRunNum][kTypeNum][kDLENum][2];
 };
 
 #endif
