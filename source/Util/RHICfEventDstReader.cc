@@ -13,7 +13,8 @@ void RHICfEventDstReader::Init()
 {
 	int runType = mOptContainer->GetRunType();
 	TString inputDataPath = mOptContainer->GetInputDataPath();
-    TString inputList = mOptContainer->GetDataPath()+"/RHICfEventDstFile.list";
+	TString runTypeName =  mOptContainer->GetRunTypeName(runType);
+    TString inputList = mOptContainer->GetDataPath()+"/RHICfEventDst_"+runTypeName+".list";
 	if(mOptContainer->GetInputDataList() != ""){inputList = mOptContainer->GetInputDataList();}
 	else{
 		gSystem->Exec(Form(" > %s", inputList.Data()));
@@ -37,12 +38,12 @@ void RHICfEventDstReader::Init()
 	cout << "RHICfEventDstReader::Init() -- Data list reading...." << endl;
 
 	while(getline(inputStream, file)){
+		if(fileNum == mOptContainer->GetExecuteFileNum() && mOptContainer->GetExecuteFileNum() > 0){break;}
         if(file.find("RHICfEventDst.root") != std::string::npos){
             TString fileName = file;
             mChain -> Add(fileName);
             fileNum++;
         }
-		if(fileNum > mOptContainer->GetExecuteFileNum()){break;}
     }
 
 	mRHICfEventDst = new StRHICfEventDst();
