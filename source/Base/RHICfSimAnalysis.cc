@@ -127,7 +127,7 @@ int RHICfSimAnalysis::Calculate()
     for(int run=0; run<kRunNum; run++){
         hPi0Pos[run] = new TH2D(Form("hPi0Pos_%i", run), "", 100, -200., 200., 100, -200., 200.);
         for(int m=0; m<mModelNum; m++){
-            hSimPi0Pos[run][m] = new TH2D(Form("hSimPi0Pos_%i_%i", run, m), "", 100, -200., 200., 100, -200., 200.);
+            hSimPi0Pos[run][m] = new TH2D(Form("hSimPi0Pos_%i_%i", run, m), "", 100, -50., 50., 100, 0., 220.);
         }
     }
 
@@ -228,7 +228,9 @@ int RHICfSimAnalysis::Calculate()
             double xf = pz/255.;
             double x = Pos[0][0]*1000.;
             double y = Pos[0][1]*1000.;
-            hPi0Pos[run] -> Fill(x, y);
+
+            if(Pi0Type[0] == 1){hPi0Pos[run] -> Fill(x, y);}
+            
 
             hDataMass[run][DLEIdx][Pi0Type[0]] -> Fill(Mass[0]);
             hDataMass[run][kALLDLE][Pi0Type[0]] -> Fill(Mass[0]);
@@ -332,8 +334,9 @@ int RHICfSimAnalysis::Calculate()
 
                 double x = mMiniSimDst -> GetPosX()*1000.;
                 double y = mMiniSimDst -> GetPosY()*1000.;
-                hSimPi0Pos[run][m] -> Fill(x, y);
 
+                if(type == 1){hSimPi0Pos[run][m] -> Fill(x, y);}
+                
                 if(pid == 1){continue;}
 
                 int truthFlag = GetTruthParFlag(type); // [1 == signal, 0 == bkg]

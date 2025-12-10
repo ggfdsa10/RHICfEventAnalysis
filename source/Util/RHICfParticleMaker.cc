@@ -401,10 +401,14 @@ int RHICfParticleMaker::GetGlobalPosition(double& localX, double& localY, int to
 
     double beamCenterX = 0.;
     double beamCenterY = 0.;
-    // if(!mIsSimData){ test
+    if(!mIsSimData){
         beamCenterX = BeamCenterPosition(fillNum, 0, method, ref);
         beamCenterY = BeamCenterPosition(fillNum, 1, method, ref);
-    // }
+    }
+    else{
+        beamCenterX = SimBeamCenterPosition(fillNum, 0);
+        beamCenterY = SimBeamCenterPosition(fillNum, 1);
+    }
 
     int runType = mOptContainer -> GetFillNumToRunIdx(fillNum);
     if(runType == kTLRun){
@@ -414,7 +418,6 @@ int RHICfParticleMaker::GetGlobalPosition(double& localX, double& localY, int to
     if(runType == kTSRun || runType == kTOPRun){
         TowerIdxByRunType = 0;
         beamCenterY = beamCenterY + sqrt(2.)*geoCenterTS;
-        if(runType == kTOPRun && mIsSimData){beamCenterY -= 21.6;} // [mm]
     }
 
     double posX = localX;
@@ -455,7 +458,6 @@ double RHICfParticleMaker::BeamCenterPosition(int fillNum, int xy, int method, i
             if(xy==0){return 0.66;}
             else if(xy==1){return 1.37;}
         }
-
     }
     if(fillNum == 21145){
         if(method==kBeamCenterScan){
@@ -509,6 +511,23 @@ double RHICfParticleMaker::BeamCenterPosition(int fillNum, int xy, int method, i
                 else if(xy==1){return -22.48;}
             }
         }
+    }
+    return -999.;
+}
+
+double RHICfParticleMaker::SimBeamCenterPosition(int fillNum, int xy)
+{
+    if(fillNum == 21142 || fillNum == 21145){ // TL
+        if(xy==0){return 0.44;}
+        else if(xy==1){return 1.86;}
+    }
+    else if(fillNum == 21148 || fillNum == 21150){ // TS
+        if(xy==0){return 0.22;}
+        else if(xy==1){return 1.9;}
+    }
+    else if(fillNum == 21149){ // TOP
+        if(xy==0){return 0.22;}
+        else if(xy==1){return (-0.53-21.6);}
     }
     return -999.;
 }

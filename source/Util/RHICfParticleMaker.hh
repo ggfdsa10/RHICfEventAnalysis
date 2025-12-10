@@ -47,7 +47,7 @@ class RHICfParticleMaker
 
         int GetGlobalPosition(double& localX, double& localY, int towerIdx, int fillNum, int method, int ref);
         double BeamCenterPosition(int fillNum, int xy, int method, int ref);
-        double BeamCenterPositionErr(int fillNum, int xy, int method, int ref);
+        double SimBeamCenterPosition(int fillNum, int xy);
 
     private:
         MiniParticle GetGamma();

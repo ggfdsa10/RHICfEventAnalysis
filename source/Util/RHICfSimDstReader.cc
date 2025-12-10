@@ -71,7 +71,7 @@ void RHICfSimDstReader::Init()
 
 void RHICfSimDstReader::Make()
 {
-    if(FindMiniSimDst()){cout << "RHICfSimDstReader::Make() -- Duplicated file: " << mMiniDstName << ".root" << endl;}
+    if(FindMiniSimDst()){cout << "RHICfSimDstReader::Make() -- Duplicated file -> " << mMiniDstName << ".root... recreate file." << endl;}
     else{cout << "RHICfSimDstReader::Make() -- Create file: " << mMiniDstName << ".root" << endl;}
 
     mMiniDstFile = new TFile(Form("%s/%s.root", mDataPath.Data(), mMiniDstName.Data()), "recreate");
