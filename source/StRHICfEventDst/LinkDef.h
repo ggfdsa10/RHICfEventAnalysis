@@ -11,7 +11,7 @@
 #pragma link C++ class StRHICfBBC;
 #pragma link C++ class StRHICfVPD;
 #pragma link C++ class StRHICfZDC;
-#pragma link C++ class StRHICfParticle;
+#pragma link C++ class StRHICfDetHit;
 #pragma link C++ class StRHICfDetPoint;
 #pragma link C++ class StRHICfFMS;
 #pragma link C++ class StRHICfRPS;

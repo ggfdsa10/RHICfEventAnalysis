@@ -14,7 +14,7 @@ class RHICfDilutionFactor
 {
 
     public:
-        RHICfDilutionFactor();
+        RHICfDilutionFactor(TString tableName="");
         ~RHICfDilutionFactor();
 
         void Init();
@@ -30,6 +30,7 @@ class RHICfDilutionFactor
 
         int GetDilutionTableFlag();
         double GetDilutionFactor(int runIdx, int typeIdx, int dleIdx, int ptIdx, int xfIdx);
+        double GetDilutionFactorErr(int runIdx, int typeIdx, int dleIdx, int ptIdx, int xfIdx);
 
         TH1D* GetDilutionHist(int runIdx, int typeIdx, int dleIdx, int ptIdx, int xfIdx);
 
@@ -37,6 +38,7 @@ class RHICfDilutionFactor
         RHICfOptContainer* mOptContainer;
         RHICfTableMaker* mTableMaker;
         RHICfBinning* mBinning;
+        TString mTableName;
 
         vector<vector<TH1D*> > mDilutionHist[kRunNum][kTypeNum][kDLENum];
         vector<vector<double> > mDilutionFactor[kRunNum][kTypeNum][kDLENum][2];

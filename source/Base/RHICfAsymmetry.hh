@@ -1,87 +1,96 @@
 #ifndef RHICfAsymmetry_hh
 #define RHICfAsymmetry_hh
 
-#include "TH1D.h"
-#include "TH2D.h"
-#include "TF1.h"
-#include "TGraphErrors.h"
-#include "TMath.h"
+#include <vector> 
+
 #include "TCanvas.h"
+#include "TLatex.h"
+#include "TLegend.h"
+#include "TLine.h"
+#include "TH1D.h"
+#include "TF1.h"
+#include "TGraph.h"
+#include "TGraphErrors.h"
+#include "TPad.h"
 
 #include "RHICfOptContainer.hh"
+#include "RHICfEventDstReader.hh"
 #include "RHICfTableMaker.hh"
-#include "RHICfBinning.hh"
+#include "RHICfParticleMaker.hh"
+
 #include "RHICfMassFitting.hh"
+#include "RHICfBinning.hh"
 #include "RHICfDilutionFactor.hh"
+#include "RHICfPolarization.hh"
 
 using namespace std;
 
-class RHICfAsymmetry
+static const int kBeamMetNum = 2;
+static const int kBeamTOPRefNum = 2;
+
+class RHICfAsymmetry : public RHICfOptContainer, RHICfTableMaker
 {
     public:
         RHICfAsymmetry();
         ~RHICfAsymmetry();
 
-        void Init();
-        void InitAsymmetryData();
-
-        void SetBinning(RHICfBinning* binning);
-        void SetMassFitting(RHICfMassFitting* massFitting);
-        void SetDilution(RHICfDilutionFactor* dilution);
-
-        void FillPolarization(int fillIdx, int typeIdx, int dleIdx, int ptIdx, int xfIdx, double angle, bool isSpinUp);
-        void FillBkgPolarization(int fillIdx, int typeIdx, int dleIdx, int ptIdx, int xfIdx, double angle, bool isSpinUp);
-
-        void CalculateAN();
-        void SaveAsymmetryData();
-
-        int GetAsymmetryTableFlag();
-        double GetPolNum(int fillIdx, int typeIdx, int dleIdx, int ptIdx, int xfIdx, bool isRightHand);
-        double GetBkgPolNum(int fillIdx, int typeIdx, int dleIdx, int ptIdx, int xfIdx, bool isRightHand);
-
-        TGraphErrors* GetANGraph(bool isPtGraph, int anType, int runIdx, int typeIdx, int dleIdx, int binIdx);
-        TGraphErrors* GetANGraph(bool isPtGraph, int anType, int dleIdx, int binIdx);
-        TGraphErrors* GetANSummaryGraph(bool isPtGraph, int anType, int dleIdx);
+        int Init();
+        void Calculate();
+    
 
     private:
         void AsymmetryPi0();
-        void AsymmetryNeutron();
+        void SystematicErrorCalculatePi0();
+        
+        void DrawAsymmetryGraph();
+        TString GetSystemString();
 
-        double GetInclusiveAN(int fillIdx, int typeIdx, int dleIdx, int ptIdx, int xfIdx);
-        double GetInclusiveANCounts(int fillIdx, int typeIdx, int dleIdx, int ptIdx, int xfIdx);
-        double GetInclusiveANStatError(int fillIdx, int typeIdx, int dleIdx, int ptIdx, int xfIdx);
-
-        double GetBkgAN(int fillIdx, int typeIdx, int dleIdx, int ptIdx, int xfIdx);
-        double GetBkgANCounts(int fillIdx, int typeIdx, int dleIdx, int ptIdx, int xfIdx);
-        double GetBkgANStatError(int fillIdx, int typeIdx, int dleIdx, int ptIdx, int xfIdx);
-
-        double GetExclusiveAN(int fillIdx, int typeIdx, int dleIdx, int ptIdx, int xfIdx);
-        double GetExclusiveANCounts(int fillIdx, int typeIdx, int dleIdx, int ptIdx, int xfIdx);
-        double GetExclusiveANStatError(int fillIdx, int typeIdx, int dleIdx, int ptIdx, int xfIdx);
-
-        bool RejectPoint(int runIdx, int typeIdx, int dleIdx, int ptIdx, int xfIdx);
+        TGraphErrors* GetANGraph(bool isPtGraph, int anType, int runIdx, int typeIdx, int dleIdx, int binIdx);
+        TGraphErrors* GetANBkgGraph(bool isPtGraph, int anType, int runIdx, int typeIdx, int dleIdx, int binIdx);
+        TGraphErrors* GetANSubtGraph(bool isPtGraph, int anType, int runIdx, int typeIdx, int dleIdx, int binIdx);
 
         void InitGraph();
         double RelativeLuminosity(int fillIdx);
         double BeamPolarization(int fillIdx);
+        double BeamPolarizationError(int fillIdx);
 
         RHICfOptContainer* mOptContainer;
         RHICfTableMaker* mTableMaker;
-        RHICfBinning* mBinning;
-        RHICfMassFitting* mMassFitting;
-        RHICfDilutionFactor* mDilution;
 
-        vector<vector<double> > mRightAsymmetry[kFillNum][kTypeNum][kDLENum];
-        vector<vector<double> > mLeftAsymmetry[kFillNum][kTypeNum][kDLENum];
-        vector<vector<double> > mBkgRightAsymmetry[kFillNum][kTypeNum][kDLENum];
-        vector<vector<double> > mBkgLeftAsymmetry[kFillNum][kTypeNum][kDLENum];
+        RHICfBinning* mBinning[kRunNum][kBeamMetNum][kBeamTOPRefNum];
+        RHICfMassFitting* mMassFitting[kRunNum][kBeamMetNum][kBeamTOPRefNum];
+        RHICfDilutionFactor* mDilution[kRunNum][kBeamMetNum][kBeamTOPRefNum];
+        RHICfPolarization* mPolarization[kRunNum][kBeamMetNum][kBeamTOPRefNum];
+        
+        TString mCondName;
 
-        vector<TGraphErrors*> mGraphAN_Global_pT[kRunNum][kTypeNum][kDLENum][3]; // [inclusive, bkg, exclusive]
-        vector<TGraphErrors*> mGraphAN_Global_xF[kRunNum][kTypeNum][kDLENum][3]; // [inclusive, bkg, exclusive]
-        vector<TGraphErrors*> mGraphAN_pT[kDLENum][3]; // [inclusive, bkg, exclusive]
-        vector<TGraphErrors*> mGraphAN_xF[kDLENum][3]; // [inclusive, bkg, exclusive]
-        TGraphErrors* mGraphAN_pTSummary[kDLENum][3];
-        TGraphErrors* mGraphAN_xFSummary[kDLENum][3];
+        vector<TGraphErrors*> mGraphAN_pT[kRunNum][kTypeNum][kDLENum][5]; // [beamHit, beamScan, beam method summed]
+        vector<TGraphErrors*> mGraphAN_xF[kRunNum][kTypeNum][kDLENum][5]; // [beamHit, beamScan, beam method summed]
+        vector<TGraphErrors*> mGraphAN_Bkg_pT[kRunNum][kTypeNum][kDLENum][5]; // [beamHit, beamScan, beam method summed]
+        vector<TGraphErrors*> mGraphAN_Bkg_xF[kRunNum][kTypeNum][kDLENum][5]; // [beamHit, beamScan, beam method summed]
+        vector<TGraphErrors*> mGraphAN_Subt_pT[kRunNum][kTypeNum][kDLENum][5];
+        vector<TGraphErrors*> mGraphAN_Subt_xF[kRunNum][kTypeNum][kDLENum][5];
+
+        vector<TGraphErrors*> mGraphANSysErr_Calcul_subt_pT[kRunNum][kTypeNum][kDLENum][4][4][2]; // [Beam Method][dilution error, polarization error, B/S ratio error, DLE error][two point]
+        vector<TGraphErrors*> mGraphANSysErr_Calcul_subt_xF[kRunNum][kTypeNum][kDLENum][4][4][2]; // [Beam Method][dilution error, polarization error, B/S ratio error, DLE error][two point]
+        vector<TGraphErrors*> mGraphANSysErr_Subt_pT[kRunNum][kTypeNum][kDLENum][5]; // [dilution Err, polaarization err, B/S err, beam center err, total err]
+        vector<TGraphErrors*> mGraphANSysErr_Subt_xF[kRunNum][kTypeNum][kDLENum][5]; // [dilution Err, polaarization err, B/S err, beam center err, total err]
+
+        vector<TGraphErrors*> mGraphAN_pTSummary[kDLENum];
+        vector<TGraphErrors*> mGraphAN_xFSummary[kDLENum];
+        vector<TGraphErrors*> mGraphAN_pTSummarySysErr[kDLENum][5]; // [dilution Err, polaarization err, B/S err, beam center err, total err]
+        vector<TGraphErrors*> mGraphAN_xFSummarySysErr[kDLENum][5]; // [dilution Err, polaarization err, B/S err, beam center err, total err]
+
+        vector<TGraphErrors*> mGraphAN_pTSummary_merge[kDLENum];
+        vector<TGraphErrors*> mGraphAN_xFSummary_merge[kDLENum];
+        vector<TGraphErrors*> mGraphAN_pTSummarySysErr_merge[kDLENum][5]; // [dilution Err, polaarization err, B/S err, beam center err, total err]
+        vector<TGraphErrors*> mGraphAN_xFSummarySysErr_merge[kDLENum][5]; // [dilution Err, polaarization err, B/S err, beam center err, total err]
+
+        vector<TGraphErrors*> mGraphAN_pTSummary_DLEmerge[3];
+        vector<TGraphErrors*> mGraphAN_xFSummary_DLEmerge[3];
+        vector<TGraphErrors*> mGraphAN_pTSummarySysErr_DLEmerge[3][5]; // [dilution Err, polaarization err, B/S err, beam center err, total err]
+        vector<TGraphErrors*> mGraphAN_xFSummarySysErr_DLEmerge[3][5]; // [dilution Err, polaarization err, B/S err, beam center err, total err]
+
 };
 
 #endif

@@ -3,12 +3,13 @@
 cmake_minimum_required(VERSION 2.6 FATAL_ERROR)
 project(RHICfAnalysis)
 
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -m32")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -m64")
 
 #----------------------------------------------------------------------------
 # Find ROOT (required package)
-set(ROOTPATH /afs/rhic.bnl.gov/star/ROOT/5.34.38/.sl73_gcc485/rootdeb CACHE PATH "Path to the ROOT library")
-message(STATUS "ROOT Path: ${ROOTPATH}")
+#set(ROOTPATH /afs/rhic.bnl.gov/star/ROOT/5.34.38/.sl73_gcc485/rootdeb CACHE PATH "Path to the ROOT library") # for 32bit (old)
+set(ROOTPATH /star/nfs4/AFS/star/ROOT/5.34.38/.sl73_x8664_gcc485/rootdeb CACHE PATH "Path to the ROOT library") # for 64bit in NFS4
+#message(STATUS "ROOT Path: ${ROOTPATH}")
 set(CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 list(APPEND CMAKE_PREFIX_PATH ${ROOTPATH})
 
@@ -38,6 +39,8 @@ endforeach(_directory)
 
 set(RHICFDST_DIR 
   ${CMAKE_CURRENT_LIST_DIR}/source/StRHICfEventDst
+  ${CMAKE_CURRENT_LIST_DIR}/source/StRHICfSimDst
+  ${CMAKE_CURRENT_LIST_DIR}/source/MiniSimDst
   CACHE INTERNAL ""
 )
 
@@ -89,3 +92,12 @@ target_link_libraries(RHICfAnalysisLib ${TOOLS_LIBRARIES_LIST})
 # =======================  Execute files =========================
 add_executable(calculateAN ANCalculation.cc)
 target_link_libraries(calculateAN RHICfAnalysisLib)
+
+add_executable(makeMiniSimDst makeMiniSimDst.cc)
+target_link_libraries(makeMiniSimDst RHICfAnalysisLib)
+
+add_executable(makePicoEvent makePicoEvent.cc)
+target_link_libraries(makePicoEvent RHICfAnalysisLib)
+
+add_executable(simAnalysis simAnalysis.cc)
+target_link_libraries(simAnalysis RHICfAnalysisLib)

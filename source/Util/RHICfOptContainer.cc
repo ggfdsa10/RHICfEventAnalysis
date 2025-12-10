@@ -11,7 +11,8 @@ RHICfOptContainer* RHICfOptContainer::mOptContainer = nullptr;
 RHICfOptContainer* RHICfOptContainer::GetOptContainer()
 {
     if (mOptContainer != nullptr){return mOptContainer;}
-    return new RHICfOptContainer();
+    mOptContainer = new RHICfOptContainer();
+    return mOptContainer;
 }
 
 RHICfOptContainer::RHICfOptContainer() 
@@ -28,12 +29,15 @@ RHICfOptContainer::~RHICfOptContainer()
 int RHICfOptContainer::Init()
 {
     int sumParticleOpt = int(mGammaCalc)+int(mPi0Calc)+int(mNeutronCalc)+int(mLambda0Calc);
-    if(sumParticleOpt != 1){
+    if(sumParticleOpt != 1 && mSimModelIdx == -1 && !mTestMode){
         cout << "RHICfOptContainer::Init() -- Error: set to only one particle calculation option!" << endl;
         return 0;
     }
-    PrintOptions();
 
+    PrintOptions();
+    
+    if(mConditionName.Sizeof() == 1){mConditionName = "_";}
+    else{mConditionName = "_"+mConditionName+"_";}
     return 1;
 }
 
@@ -47,25 +51,37 @@ void RHICfOptContainer::SetRunType(TString type)
 }
 
 void RHICfOptContainer::SetInputDataPath(TString path){mInputDataPath = path;}
+void RHICfOptContainer::SetSimInputDataPath(TString path){mSimInputDataPath = path;}
 void RHICfOptContainer::SetInputDataList(TString listFile){mInputDataList = listFile;}
 void RHICfOptContainer::SetExecuteEventNum(int event){mExecuteEventNum = event;}
 void RHICfOptContainer::SetExecuteFileNum(int num){mExecuteFileNum = num;}
+void RHICfOptContainer::SetConditionName(TString cond){mConditionName = cond;}
+void RHICfOptContainer::SetTag(TString tag){mDataTag = tag;}
 
 void RHICfOptContainer::ForceCalculateMass(){mForceCalculateMass = true;}
 void RHICfOptContainer::ForceCalculateBinning(){mForceCalculateBinning = true;}
 void RHICfOptContainer::ForceCalculateDilution(){mForceCalculateDilution = true;}
-void RHICfOptContainer::ForceCalculateAsymmetry(){mForceCalculateAsymmetry = true;}
+void RHICfOptContainer::ForceCalculatePolarization(){mForceCalculatePolarization = true;}
 void RHICfOptContainer::ForceCalculateSystematicError(){mForceCalculateSystematicError = true;}
 
 void RHICfOptContainer::ForceDefaultBinning(){mForceDefaultBinning = true;}
 
+void RHICfOptContainer::ForceEnergyCorrection(){mForceEnergyCorrection = true;}
+
+void RHICfOptContainer::SetTestMode(){mTestMode = true;}
 void RHICfOptContainer::CalculateGamma(){mGammaCalc = true;}
 void RHICfOptContainer::CalculatePi0(){mPi0Calc = true;}
 void RHICfOptContainer::CalculateNeutron(){mNeutronCalc = true;}
 void RHICfOptContainer::CalculateLambda0(){mLambda0Calc = true;}
 
+void RHICfOptContainer::SetBeamCenterMethod(int idx, int ref)
+{
+    mBeamCenterMethod = idx;
+    mBeamCenterTOPRef = ref;
+}
+
+void RHICfOptContainer::SetOffDetHit(){mOffDetHit = true;}
 void RHICfOptContainer::SetOffDetPoint(){mOffDetPoint = true;}
-void RHICfOptContainer::SetOffParticle(){mOffParticle = true;}
 void RHICfOptContainer::SetOffTPCTrack(){mOffTPCTrack = true;}
 void RHICfOptContainer::SetOffBTof(){mOffBTof = true;}
 void RHICfOptContainer::SetOffBBC(){mOffBBC = true;}
@@ -73,6 +89,11 @@ void RHICfOptContainer::SetOffVPD(){mOffVPD = true;}
 void RHICfOptContainer::SetOffZDC(){mOffZDC = true;}
 void RHICfOptContainer::SetOffFMS(){mOffFMS = true;}
 void RHICfOptContainer::SetOffRPS(){mOffRPS = true;}
+
+void RHICfOptContainer::SetSimModel(int modelIdx)
+{
+    mSimModelIdx = modelIdx;
+}
 
 int RHICfOptContainer::GetRunType(){return mRunType;}
 
@@ -119,23 +140,43 @@ TString RHICfOptContainer::GetDLEName(int dleIdx)
 }
 
 TString RHICfOptContainer::GetInputDataPath(){return mInputDataPath;}
+TString RHICfOptContainer::GetSimInputDataPath(){return mSimInputDataPath;}
 TString RHICfOptContainer::GetInputDataList(){return mInputDataList;}
 TString RHICfOptContainer::GetTablePath(){return mTablePath;}
 TString RHICfOptContainer::GetDataPath(){return mDataPath;}
 TString RHICfOptContainer::GetFigurePath(){return mFigurePath;}
 int RHICfOptContainer::GetExecuteEventNum(){return mExecuteEventNum;}
 int RHICfOptContainer::GetExecuteFileNum(){return mExecuteFileNum;}
+TString RHICfOptContainer::GetConditionName(){return mConditionName;}
+TString RHICfOptContainer::GetTag(){return mDataTag;}
+TString RHICfOptContainer::GetTableSubName(int runIdx)
+{
+    if(runIdx == -1){runIdx = GetRunType();}
+    TString tableSubName = "";
+    if(mBeamCenterMethod == kBeamCenterHit){tableSubName = mConditionName+"BeamHit";}
+    if(mBeamCenterMethod == kBeamCenterScan){tableSubName = mConditionName+"BeamScan";}
+    if(runIdx == kTOPRun){
+        if(mBeamCenterTOPRef == kBeamCenterRef21148){tableSubName = tableSubName+"_Ref21148";}
+        if(mBeamCenterTOPRef == kBeamCenterRef21150){tableSubName = tableSubName+"_Ref21150";}
+    }
+    return tableSubName;
+}
 
 bool RHICfOptContainer::IsForceCalculateMass(){return mForceCalculateMass;}
 bool RHICfOptContainer::IsForceCalculateBinning(){return mForceCalculateBinning;}
 bool RHICfOptContainer::IsForceCalculateDilution(){return mForceCalculateDilution;}
-bool RHICfOptContainer::IsForceCalculateAsymmetry(){return mForceCalculateAsymmetry;}
+bool RHICfOptContainer::IsForceCalculatePolarization(){return mForceCalculatePolarization;}
 bool RHICfOptContainer::IsForceCalculateSystematicError(){return mForceCalculateSystematicError;}
 
 bool RHICfOptContainer::IsForceDefaultBinning(){return mForceDefaultBinning;}
 
+bool RHICfOptContainer::IsForceEnergyCorrection(){return mForceEnergyCorrection;}
+
+int RHICfOptContainer::GetBeamCenterMethod(){return mBeamCenterMethod;}
+int RHICfOptContainer::GetBeamCenterRef(){return mBeamCenterTOPRef;}
+
+bool RHICfOptContainer::GetOffDetHit(){return mOffDetHit;}
 bool RHICfOptContainer::GetOffDetPoint(){return mOffDetPoint;}
-bool RHICfOptContainer::GetOffParticle(){return mOffParticle;}
 bool RHICfOptContainer::GetOffTPCTrack(){return mOffTPCTrack;}
 bool RHICfOptContainer::GetOffBTof(){return mOffBTof;}
 bool RHICfOptContainer::GetOffBBC(){return mOffBBC;}
@@ -162,17 +203,28 @@ Int_t RHICfOptContainer::GetParticleRunIdx()
     return -1;
 }
 
+int RHICfOptContainer::GetSimModelIdx(){return mSimModelIdx;}
+
+TString RHICfOptContainer::GetSimModelName(int idx)
+{
+    return StRHICfSimPar::GetGeneratorName(idx);
+}
+
 void RHICfOptContainer::InitOptions()
 {
     mRunType = kALLRun;
     mInputDataPath = "/gpfs01/star/pwg/slee5/RHICfEvent"; // Default input path
+    mSimInputDataPath = "/gpfs01/star/pwg/slee5/simulation"; // Default simultion input path
     mInputDataList = "";
     mTablePath = "";
     mDataPath = "";
     mFigurePath = "";
     mExecuteEventNum = -1;
     mExecuteFileNum = -1;
+    mConditionName = "";
+    mDataTag = "";
 
+    mTestMode = false;
     mGammaCalc = false;
     mPi0Calc = false;
     mNeutronCalc = false;
@@ -181,13 +233,17 @@ void RHICfOptContainer::InitOptions()
     mForceCalculateMass = false;
     mForceCalculateBinning = false;
     mForceCalculateDilution = false;
-    mForceCalculateAsymmetry = false;
+    mForceCalculatePolarization = false;
     mForceCalculateSystematicError = false;
+    mForceEnergyCorrection = false;
     
     mForceDefaultBinning = false;
 
+    mBeamCenterMethod = kBeamCenterHit;
+    mBeamCenterTOPRef = kBeamCenterRef21148;
+
+    mOffDetHit = false;
     mOffDetPoint = false;
-    mOffParticle = false;
     mOffTPCTrack = false;
     mOffBTof = false;
     mOffBBC = false;
@@ -195,6 +251,8 @@ void RHICfOptContainer::InitOptions()
     mOffZDC = false;
     mOffFMS = false;
     mOffRPS = false;
+
+    mSimModelIdx = -1;
 }
 
 void RHICfOptContainer::FindDirPath()
@@ -239,6 +297,7 @@ void RHICfOptContainer::FindDirPath()
 void RHICfOptContainer::PrintOptions()
 {
     cout << "== RHICfOptContainer::PrintOptions()" << endl;
+    if(GetSimModelIdx() != -1){cout << "== Simulation Model: " << GetSimModelName(GetSimModelIdx()) << endl;}
     cout << "== Calculate Run Type: " << GetRunTypeName(GetRunType()) << endl;
     cout << "== Calculate Particle Type: " << GetParticleRunName() << endl;
     cout << "== Input Data Path: " << GetInputDataPath() << endl;
@@ -251,8 +310,8 @@ void RHICfOptContainer::PrintOptions()
     cout << "== Force to Calculate Mass: " << ((IsForceCalculateMass() == true)? "TRUE" : "FALSE") << endl;
     cout << "== Force to Calculate Binning: " << ((IsForceCalculateBinning() == true)? "TRUE" : "FALSE") << endl;
     cout << "== Detector data ON-OFF:" << endl;
+    cout << "     RHICfDetHit   : " << ((GetOffDetHit() == false)? "ON" : "OFF") << endl;
     cout << "     RHICfDetPoint : " << ((GetOffDetPoint() == false)? "ON" : "OFF") << endl;
-    cout << "     RHICfParticle : " << ((GetOffParticle() == false)? "ON" : "OFF") << endl;
     cout << "     TPCTrack      : " << ((GetOffTPCTrack() == false)? "ON" : "OFF") << endl;
     cout << "     B-TOF         : " << ((GetOffBTof() == false)? "ON" : "OFF") << endl;
     cout << "     BBC           : " << ((GetOffBBC() == false)? "ON" : "OFF") << endl;

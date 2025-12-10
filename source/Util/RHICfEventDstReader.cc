@@ -42,13 +42,15 @@ void RHICfEventDstReader::Init()
         if(file.find("RHICfEventDst.root") != std::string::npos){
             TString fileName = file;
             mChain -> Add(fileName);
+
+			if(fileNum%10 == 0){cout << "processing " << fileNum << " th file... Entries --> "  << mChain -> GetEntries() << endl;}
             fileNum++;
         }
     }
 
 	mRHICfEventDst = new StRHICfEventDst();
+	if(mOptContainer->GetOffDetHit()){mChain -> SetBranchStatus("StRHICfDetHit*", 0);}
 	if(mOptContainer->GetOffDetPoint()){mChain -> SetBranchStatus("StRHICfDetPoint*", 0);}
-	if(mOptContainer->GetOffParticle()){mChain -> SetBranchStatus("StRHICfParticle*", 0);}
 	if(mOptContainer->GetOffTPCTrack() && mChain->GetBranchStatus("StRHICfTPCTrack")){mChain -> SetBranchStatus("StRHICfTPCTrack*", 0);}
     if(mOptContainer->GetOffBTof() && mChain->GetBranchStatus("StRHICfBTof")){mChain -> SetBranchStatus("StRHICfBTof*", 0);}
     if(mOptContainer->GetOffBBC() && mChain->GetBranchStatus("StRHICfBBC")){mChain -> SetBranchStatus("StRHICfBBC*", 0);}

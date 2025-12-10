@@ -20,6 +20,8 @@ class RHICfDLECondition
 
         int GetDLEIdx();
 
+        int GetSimEventType(int model, int id); // convert from id to event type
+
     private:
         RHICfOptContainer* mOptContainer;
 

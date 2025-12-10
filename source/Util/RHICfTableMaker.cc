@@ -31,22 +31,24 @@ int RHICfTableMaker::Init()
 
 int RHICfTableMaker::InitTable(TString tableName)
 {
+    TString particleRunName = mOptContainer -> GetParticleRunName();
+    TString tmpFileName = Form("%s_Results_%s", tableName.Data(), particleRunName.Data());
+    TString runName = mOptContainer->GetRunTypeName(mOptContainer->GetRunType());
+    TString FileName = tmpFileName + "_" + runName;
+    
     int tableIdx = FindTableIdx(tableName);
     if(tableIdx == -1){
         vector<TableData> table;
-        if(ReadTable(tableName, table)){
-        }
-        else{
+        if(!ReadTable(tableName, table)){
             cout << "RHICfTableMaker::InitTable(" << tableName << ") -- Table is not found, new table will be assigned" << endl;
         }
 
-        mTableName.push_back(tableName);
+        mTableName.push_back(FileName);
         mTable.push_back(table);
 
-        if(FindTableIdx(tableName) != -1){
-            return 1;
-        }
+        if(FindTableIdx(tableName) != -1){return 1;}
     }
+    
     return 0;
 }
 
@@ -80,12 +82,17 @@ double RHICfTableMaker::GetTableData(TString tableName, int runIdx, int typeIdx,
 
 int RHICfTableMaker::FindTableIdx(TString tableName)
 {
-    tableName.ToUpper();
+    TString particleRunName = mOptContainer -> GetParticleRunName();
+    TString tmpFileName = Form("%s_Results_%s", tableName.Data(), particleRunName.Data());
+    TString runName = mOptContainer->GetRunTypeName(mOptContainer->GetRunType());
+    TString FileName = tmpFileName + "_" + runName;
+    
+    FileName.ToUpper();
     int tableListSize = mTableName.size();
     for(int i=0; i<tableListSize; i++){
         TString tmpName = mTableName[i];
         tmpName.ToUpper();
-        if(tmpName.Index(tableName) != -1){return i;}
+        if(tmpName.Index(FileName) != -1){return i;}
     }
     return -1;
 }
@@ -135,8 +142,8 @@ int RHICfTableMaker::ReadTable(TString tableName, vector<TableData> &tableData)
 {
     TString tablePath = mOptContainer -> GetTablePath();
     TString particleRunName = mOptContainer -> GetParticleRunName();
+    TString fileName = Form("%s/%s_Results_%s", tablePath.Data(), tableName.Data(), particleRunName.Data());
 
-    TString fileName = Form("%s/%sResults_%s", tablePath.Data(), tableName.Data(), particleRunName.Data());
     for(int run=0; run<kRunNum; run++){
         if(mOptContainer->GetRunType() != kALLRun && mOptContainer->GetRunType() != run){continue;}
         if(mTableStream.is_open()){mTableStream.close();}
@@ -179,17 +186,13 @@ int RHICfTableMaker::ReadTable(TString tableName, vector<TableData> &tableData)
 int RHICfTableMaker::MakeTable(TString tableName, vector<TableData> &tableData)
 {
     TString tablePath = mOptContainer -> GetTablePath();
-    TString particleRunName = mOptContainer -> GetParticleRunName();
-    TString fileName = Form("%s/%sResults_%s", tablePath.Data(), tableName.Data(), particleRunName.Data());
+    TString fileName = Form("%s/%s.dat", tablePath.Data(), tableName.Data());
 
     for(int run=0; run<kRunNum; run++){
         if(mOptContainer->GetRunType() != kALLRun && mOptContainer->GetRunType() != run){continue;}
 
-        TString runName = mOptContainer->GetRunTypeName(run);
-        TString runFileName = fileName + Form("_%s.dat", runName.Data());
-
         if(mTableStream.is_open()){mTableStream.close();}
-        mTableStream.open(runFileName.Data(), ios::out);
+        mTableStream.open(fileName.Data(), ios::out);
 
         if(mTableStream.is_open()){
             int tableNum = tableData.size();
@@ -204,7 +207,7 @@ int RHICfTableMaker::MakeTable(TString tableName, vector<TableData> &tableData)
                 mTableStream << endl;
             }
             mTableStream.close();
-            cout << "RHICfTableMaker::MakeTable(" << tableName << ") -- Data table has been saved: " << runFileName << endl;
+            cout << "RHICfTableMaker::MakeTable(" << tableName << ") -- Data table has been saved: " << endl;
         }
         else{return 0;}
     }

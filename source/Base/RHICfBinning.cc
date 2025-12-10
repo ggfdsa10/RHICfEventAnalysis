@@ -1,6 +1,6 @@
 #include "RHICfBinning.hh"
 
-RHICfBinning::RHICfBinning() 
+RHICfBinning::RHICfBinning(TString tableName) : mTableName(tableName) 
 {
     mOptContainer = RHICfOptContainer::GetOptContainer();
     mTableMaker = RHICfTableMaker::GetTableMaker();
@@ -16,7 +16,8 @@ void RHICfBinning::Init()
     mPtBins = 5;
     mXfBins = 4;
 
-    mTableMaker -> InitTable("Binning");
+    if(mTableName.Sizeof() == 1){mTableName = mOptContainer->GetTableSubName();}
+    mTableMaker -> InitTable("Binning"+mTableName);
 
     int particleRunType = mOptContainer -> GetParticleRunIdx();
     if(particleRunType == kPi0Run){Pi0GlobalBinning();}
@@ -33,16 +34,16 @@ void RHICfBinning::InitBinningData()
         for(int run=0; run<kRunNum; run++){
             for(int type=0; type<kTypeNum; type++){
                 for(int dle=0; dle<kDLENum; dle++){
-                    int ptBoundaryNum = mTableMaker->GetTableData("Binning", run, type, dle, 1, -1, -1);
-                    int xfBoundaryNum = mTableMaker->GetTableData("Binning", run, type, dle, -1, 1, -1);
+                    int ptBoundaryNum = mTableMaker->GetTableData("Binning"+mTableName, run, type, dle, 1, -1, -1);
+                    int xfBoundaryNum = mTableMaker->GetTableData("Binning"+mTableName, run, type, dle, -1, 1, -1);
                     if(ptBoundaryNum > 0 && xfBoundaryNum > 0){    
                         mPtBoundary[run][type][dle].resize(ptBoundaryNum);
                         mXfBoundary[run][type][dle].resize(xfBoundaryNum);
                         for(int pt=0; pt<ptBoundaryNum; pt++){
-                            mPtBoundary[run][type][dle][pt] = mTableMaker->GetTableData("Binning", run, type, dle, 1, -1, pt);
+                            mPtBoundary[run][type][dle][pt] = mTableMaker->GetTableData("Binning"+mTableName, run, type, dle, 1, -1, pt);
                         }
                         for(int xf=0; xf<xfBoundaryNum; xf++){
-                            mXfBoundary[run][type][dle][xf] = mTableMaker->GetTableData("Binning", run, type, dle, -1, 1, xf);
+                            mXfBoundary[run][type][dle][xf] = mTableMaker->GetTableData("Binning"+mTableName, run, type, dle, -1, 1, xf);
                         }
 
                         int ptBinNum = ptBoundaryNum-1;
@@ -51,8 +52,8 @@ void RHICfBinning::InitBinningData()
                         mXfMean[run][type][dle].resize(ptBinNum, vector<double>(xfBinNum));
                         for(int pt=0; pt<ptBinNum; pt++){
                             for(int xf=0; xf<xfBinNum; xf++){
-                                mPtMean[run][type][dle][pt][xf] = mTableMaker->GetTableData("Binning", run, type, dle, pt, xf, 0);
-                                mXfMean[run][type][dle][pt][xf] = mTableMaker->GetTableData("Binning", run, type, dle, pt, xf, 1);
+                                mPtMean[run][type][dle][pt][xf] = mTableMaker->GetTableData("Binning"+mTableName, run, type, dle, pt, xf, 0);
+                                mXfMean[run][type][dle][pt][xf] = mTableMaker->GetTableData("Binning"+mTableName, run, type, dle, pt, xf, 1);
                             }
                         }
                     }
@@ -192,14 +193,14 @@ void RHICfBinning::SaveBinningData()
         }
     }
 
-    mTableMaker ->SaveTable("Binning", table);
+    mTableMaker ->SaveTable("Binning"+mTableName, table);
 }
 
 int RHICfBinning::GetBinningTableFlag()
 {
     int runIdx = mOptContainer->GetRunType();
     if(runIdx == kALLRun){runIdx = 0;}
-    if(mTableMaker -> GetTableData("Binning", runIdx, 0, 0, 1, -1, 1) > 0.){
+    if(mTableMaker -> GetTableData("Binning"+mTableName, runIdx, 0, 0, 1, -1, 1) > 0.){
         return kExistTable;
     }
     return kNotExist;
@@ -217,27 +218,27 @@ int RHICfBinning::GetXfBinNum(int runIdx, int typeIdx, int dleIdx)
 
 double RHICfBinning::GetPtBinBoundary(int runIdx, int typeIdx, int dleIdx, int ptIdx)
 {
-    if(GetPtBinNum(runIdx, typeIdx, dleIdx) < 0){return -999.;}
+    if(GetPtBinNum(runIdx, typeIdx, dleIdx) < 1){return -999.;}
     return mPtBoundary[runIdx][typeIdx][dleIdx][ptIdx];
 }
 
 double RHICfBinning::GetXfBinBoundary(int runIdx, int typeIdx, int dleIdx, int xfIdx)
 {
-    if(GetXfBinNum(runIdx, typeIdx, dleIdx) < 0){return -999.;}
+    if(GetXfBinNum(runIdx, typeIdx, dleIdx) < 1){return -999.;}
     return mXfBoundary[runIdx][typeIdx][dleIdx][xfIdx];
 }
 
 double RHICfBinning::GetPtBinMean(int runIdx, int typeIdx, int dleIdx, int ptIdx, int xfIdx)
 {
-    if(mPtMean[runIdx][typeIdx][dleIdx].size() < 0){return -999.;}
-    if(mPtMean[runIdx][typeIdx][dleIdx][ptIdx].size() < 0){return -999.;}
+    if(mPtMean[runIdx][typeIdx][dleIdx].size() < 1){return -999.;}
+    if(mPtMean[runIdx][typeIdx][dleIdx][ptIdx].size() < 1){return -999.;}
     return mPtMean[runIdx][typeIdx][dleIdx][ptIdx][xfIdx];
 }
 
 double RHICfBinning::GetXfBinMean(int runIdx, int typeIdx, int dleIdx, int ptIdx, int xfIdx)
 {
-    if(mXfMean[runIdx][typeIdx][dleIdx].size() < 0){return -999.;}
-    if(mXfMean[runIdx][typeIdx][dleIdx][ptIdx].size() < 0){return -999.;}
+    if(mXfMean[runIdx][typeIdx][dleIdx].size() < 1){return -999.;}
+    if(mXfMean[runIdx][typeIdx][dleIdx][ptIdx].size() < 1){return -999.;}
     return mXfMean[runIdx][typeIdx][dleIdx][ptIdx][xfIdx];
 }
 

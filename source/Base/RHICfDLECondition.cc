@@ -66,3 +66,21 @@ int RHICfDLECondition::GetDLEIdx()
     if(isNDLE()){return kNDLE;}
     return kALLDLE;
 }
+
+int RHICfDLECondition::GetSimEventType(int model, int id)
+{
+    if(model == rPythia8){
+        if(id == 101){return kND;}
+        if(id == 103 || id == 104){return kSD;}
+        if(id == 105){return kDD;}
+    }
+    else{
+        if(id == 0){return -1;}
+        id = abs(id);
+        if(id >= 10){id -= 10;}
+        if(id == 4){return kSD;}
+        if(id == 1){return kND;}
+        if(id == 2){return kDD;}
+    }
+    return -1;
+}

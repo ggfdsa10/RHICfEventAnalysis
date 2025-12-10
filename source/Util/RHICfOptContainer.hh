@@ -3,6 +3,7 @@
 
 #include <iostream>
 #include "TString.h"
+#include "StRHICfSimPar.h"
 
 enum parameters{
     kTLRun = 0,
@@ -25,6 +26,15 @@ enum parameters{
 
     kType1 = 0,
     kType2 = 1,
+
+    kBeamCenterHit = 1, // neutron hit method
+    kBeamCenterScan = 2, // neutron AN scan method
+    kBeamCenterRef21148 = 1, // ref 21148 fill for TOP
+    kBeamCenterRef21150 = 2, // ref 21148 fill for TOP
+
+    kSD = 0,
+    kDD = 1,
+    kND = 2,
 
     kNULL = 0
 };
@@ -50,27 +60,34 @@ class RHICfOptContainer
         // ========== Set function for options ==========
         void SetRunType(TString type);
         void SetInputDataPath(TString path);
+        void SetSimInputDataPath(TString path);
         void SetInputDataList(TString listFile);
         void SetExecuteEventNum(int event);
         void SetExecuteFileNum(int num);
+        void SetConditionName(TString cond);
+        void SetTag(TString tag);
 
         void ForceCalculateMass();
         void ForceCalculateBinning();
         void ForceCalculateDilution();
-        void ForceCalculateAsymmetry();
+        void ForceCalculatePolarization();
         void ForceCalculateSystematicError();
 
         void ForceDefaultBinning();
+        void ForceEnergyCorrection();
 
         // specific particle calculation option
+        void SetTestMode();
         void CalculateGamma();
         void CalculatePi0();
         void CalculateNeutron();
         void CalculateLambda0();
 
+        void SetBeamCenterMethod(int idx, int ref=0);
+
         // ========== On-Off data options for RHICfEventDst
+        void SetOffDetHit();
         void SetOffDetPoint();
-        void SetOffParticle();
         void SetOffTPCTrack();
         void SetOffBTof();
         void SetOffBBC();
@@ -78,6 +95,9 @@ class RHICfOptContainer
         void SetOffZDC();
         void SetOffFMS();
         void SetOffRPS();
+
+        // ========== RHICf Simulation Dst options ==========
+        void SetSimModel(int modelIdx);
 
         // ========== Get function for options ==========
         int GetRunType();
@@ -89,6 +109,7 @@ class RHICfOptContainer
         TString GetDLEName(int dleIdx);
 
         TString GetInputDataPath();
+        TString GetSimInputDataPath();
         TString GetInputDataList();
         TString GetTablePath();
         TString GetDataPath();
@@ -96,16 +117,25 @@ class RHICfOptContainer
         int GetExecuteEventNum();
         int GetExecuteFileNum();
 
+        TString GetConditionName();
+        TString GetTag();
+        TString GetTableSubName(int runIdx=-1);
+
         bool IsForceCalculateMass();
         bool IsForceCalculateBinning();
         bool IsForceCalculateDilution();
-        bool IsForceCalculateAsymmetry();
+        bool IsForceCalculatePolarization();
         bool IsForceCalculateSystematicError();
 
         bool IsForceDefaultBinning();
 
+        bool IsForceEnergyCorrection();
+
+        int GetBeamCenterMethod();
+        int GetBeamCenterRef();
+
+        bool GetOffDetHit();
         bool GetOffDetPoint();
-        bool GetOffParticle();
         bool GetOffTPCTrack();
         bool GetOffBTof();
         bool GetOffBBC();
@@ -117,6 +147,10 @@ class RHICfOptContainer
         TString GetParticleRunName();
         Int_t GetParticleRunIdx();
 
+        // ================ Get function for Simultion options ===========
+        int GetSimModelIdx();
+        TString GetSimModelName(int idx);
+
     private:
         void InitOptions();
         void FindDirPath();
@@ -126,6 +160,7 @@ class RHICfOptContainer
         
         int mRunType;
         TString mInputDataPath;
+        TString mSimInputDataPath;
         TString mInputDataList;
         TString mTablePath;
         TString mDataPath;
@@ -133,6 +168,10 @@ class RHICfOptContainer
         int mExecuteEventNum;
         int mExecuteFileNum;
 
+        TString mConditionName;
+        TString mDataTag;
+
+        bool mTestMode;
         bool mGammaCalc;
         bool mPi0Calc;
         bool mNeutronCalc;
@@ -141,13 +180,18 @@ class RHICfOptContainer
         bool mForceCalculateMass;
         bool mForceCalculateBinning;
         bool mForceCalculateDilution;
-        bool mForceCalculateAsymmetry;
+        bool mForceCalculatePolarization;
         bool mForceCalculateSystematicError;
+
+        bool mForceEnergyCorrection;
         
         bool mForceDefaultBinning;
 
+        int mBeamCenterMethod;
+        int mBeamCenterTOPRef;
+
+        bool mOffDetHit;
         bool mOffDetPoint;
-        bool mOffParticle;
         bool mOffTPCTrack;
         bool mOffBTof;
         bool mOffBBC;
@@ -155,6 +199,8 @@ class RHICfOptContainer
         bool mOffZDC;
         bool mOffFMS;
         bool mOffRPS;
+
+        int mSimModelIdx;
 
 };
 

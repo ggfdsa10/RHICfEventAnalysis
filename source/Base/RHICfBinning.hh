@@ -10,7 +10,7 @@
 class RHICfBinning
 {
     public:
-        RHICfBinning();
+        RHICfBinning(TString tableName="");
         ~RHICfBinning();
 
         void Init();
@@ -47,6 +47,7 @@ class RHICfBinning
 
         RHICfOptContainer* mOptContainer;
         RHICfTableMaker* mTableMaker;
+        TString mTableName;
 
         TH1D* mPtHist[kRunNum][kTypeNum][kDLENum]; 
         TH1D* mXfHist[kRunNum][kTypeNum][kDLENum]; 
